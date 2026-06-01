@@ -124,12 +124,49 @@ body::after{
 
 #dice-wrap{
   display:flex;align-items:center;justify-content:center;gap:8px;
-  min-height:30px;color:var(--muted);
+  min-height:44px;color:var(--muted);
 }
-.die{font-size:26px;filter:drop-shadow(0 0 8px rgba(255,215,106,.24))}
+.die{
+  width:36px;height:36px;border-radius:9px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#fff7dc 0%,#ffd76a 42%,#ff9f2f 100%);
+  border:1px solid rgba(255,255,255,.55);
+  color:#231100;font-size:25px;line-height:1;
+  box-shadow:
+    0 8px 18px rgba(0,0,0,.34),
+    0 0 18px rgba(255,215,106,.24),
+    inset 0 1px 0 rgba(255,255,255,.70),
+    inset 0 -3px 8px rgba(94,38,0,.20);
+  filter:drop-shadow(0 0 8px rgba(255,215,106,.24));
+  transform:translateY(0) rotate(0deg) scale(1);
+}
+.die.rolling{
+  animation:dice-roll .18s cubic-bezier(.2,.85,.25,1.2) infinite;
+}
+.die.settle{
+  animation:dice-settle .34s cubic-bezier(.2,1.55,.28,1) both;
+}
 .op{font-size:14px;color:rgba(57,216,255,.38)}
 #dtot{font-size:22px;font-weight:900;color:var(--alien);font-family:monospace;
   text-shadow:0 0 12px rgba(60,255,176,.56)}
+#dtot.pop{animation:total-pop .36s cubic-bezier(.2,1.6,.3,1) both}
+
+@keyframes dice-roll{
+  0%{transform:translateY(0) rotate(0deg) scale(1)}
+  35%{transform:translateY(-13px) rotate(14deg) scale(1.08)}
+  70%{transform:translateY(4px) rotate(-11deg) scale(.98)}
+  100%{transform:translateY(0) rotate(0deg) scale(1)}
+}
+@keyframes dice-settle{
+  0%{transform:translateY(-10px) rotate(-18deg) scale(1.14)}
+  55%{transform:translateY(3px) rotate(8deg) scale(.96)}
+  100%{transform:translateY(0) rotate(0deg) scale(1)}
+}
+@keyframes total-pop{
+  0%{opacity:0;transform:translateY(8px) scale(.72)}
+  70%{opacity:1;transform:translateY(-2px) scale(1.16)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
 
 /* ── Game-over overlay ── */
 #overlay{

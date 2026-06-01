@@ -703,12 +703,14 @@ function adjustBet(dir) {
 }
 
 // ── 擲骰子 ────────────────────────────────────────────────────
-function onRoll() {
+async function onRoll() {
   if (G.animating) return;
   const bet = BET_LEVELS[G.betIdx];
   if (G.balance < bet) { setStatus('🛑 星幣不足，請降低下注'); return; }
 
   AUDIO.init();
+  G.animating = true;
+  document.getElementById('roll-btn').disabled = true;
   G.balance -= bet;
   G.canCashOut = false;
   hideCashBtn();
@@ -717,19 +719,55 @@ function onRoll() {
   const d1 = r6(), d2 = r6(), total = d1 + d2;
 
   document.getElementById('dice-wrap').classList.remove('invisible');
-  document.getElementById('d1').textContent   = DICE_EMOJI[d1 - 1];
-  document.getElementById('d2').textContent   = DICE_EMOJI[d2 - 1];
-  document.getElementById('dtot').textContent = total;
   AUDIO.dice();
+  setStatus('🎲 骰子滾動中...');
 
-  document.getElementById('roll-btn').disabled = true;
+  await animateDiceRoll(d1, d2);
   setStatus(`🚀 發射！${d1} + ${d2} = ${total}，移動 ${total} 格`);
-
-  G.animating = true;
   animateMove(total);
 }
 
 function r6() { return Math.ceil(Math.random() * 6); }
+
+function animateDiceRoll(finalD1, finalD2) {
+  const d1El = document.getElementById('d1');
+  const d2El = document.getElementById('d2');
+  const totalEl = document.getElementById('dtot');
+  const duration = 920;
+  const tick = 72;
+  let elapsed = 0;
+
+  d1El.classList.remove('settle');
+  d2El.classList.remove('settle');
+  totalEl.classList.remove('pop');
+  d1El.classList.add('rolling');
+  d2El.classList.add('rolling');
+  totalEl.textContent = '...';
+
+  return new Promise(resolve => {
+    const timer = setInterval(() => {
+      elapsed += tick;
+      d1El.textContent = DICE_EMOJI[r6() - 1];
+      d2El.textContent = DICE_EMOJI[r6() - 1];
+
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        d1El.classList.remove('rolling');
+        d2El.classList.remove('rolling');
+        d1El.textContent = DICE_EMOJI[finalD1 - 1];
+        d2El.textContent = DICE_EMOJI[finalD2 - 1];
+        totalEl.textContent = finalD1 + finalD2;
+
+        void d1El.offsetWidth;
+        d1El.classList.add('settle');
+        d2El.classList.add('settle');
+        totalEl.classList.add('pop');
+
+        setTimeout(resolve, 260);
+      }
+    }, tick);
+  });
+}
 
 // ── 棋子移動動畫 ──────────────────────────────────────────────
 function animateMove(steps) {
