@@ -25,6 +25,14 @@ const SPACES = [
   { id:15, name:'隕石坑',   type:'prize',   icon:'🌠', mult:1, bg:'#001e0e' },
 ];
 
+const SPACE_THEME = {
+  start:   { edge:'#ffd76a', glow:'255,215,106', fillA:'#2a1b05', fillB:'#090e18', label:'START' },
+  prize:   { edge:'#3cffb0', glow:'60,255,176',  fillA:'#082419', fillB:'#07111e', label:'WIN' },
+  random:  { edge:'#b985ff', glow:'185,133,255', fillA:'#20103d', fillB:'#090d1b', label:'WILD' },
+  danger:  { edge:'#ff3f64', glow:'255,63,100',  fillA:'#2b0712', fillB:'#0b0b15', label:'RISK' },
+  jackpot: { edge:'#ff9f2f', glow:'255,159,47',  fillA:'#331006', fillB:'#140816', label:'MAX' },
+};
+
 // 格子在 5×5 網格中的位置
 function spaceGrid(id) {
   if (id <= 4)  return [id, 0];
@@ -133,8 +141,33 @@ function loop(ts) {
 function draw() {
   ctx.clearRect(0, 0, BS, BS);
 
-  // 棋盤背景
-  rrFill(0, 0, BS, BS, 14, '#020410');
+  // 棋盤機台背景
+  const bg = ctx.createLinearGradient(0, 0, BS, BS);
+  bg.addColorStop(0, '#101b32');
+  bg.addColorStop(0.42, '#050916');
+  bg.addColorStop(1, '#020309');
+  rrFill(0, 0, BS, BS, 16, bg);
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * CS, 0);
+    ctx.lineTo(i * CS, BS);
+    ctx.moveTo(0, i * CS);
+    ctx.lineTo(BS, i * CS);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,215,106,0.24)';
+  ctx.lineWidth = Math.max(2, CS * 0.018);
+  ctx.shadowColor = 'rgba(57,216,255,0.25)';
+  ctx.shadowBlur = 18;
+  rrStroke(2, 2, BS - 4, BS - 4, 16);
+  ctx.restore();
 
   // 繪製所有格子
   SPACES.forEach(drawCell);
@@ -154,107 +187,149 @@ function draw() {
 // ── 繪製格子 ──────────────────────────────────────────────────
 function drawCell(sp) {
   const [col, row] = spaceGrid(sp.id);
-  const x = col * CS, y = row * CS, pd = 2.5;
+  const x = col * CS, y = row * CS, pd = Math.max(3, CS * 0.045);
   const now = Date.now();
+  const th = SPACE_THEME[sp.type];
+  const w = CS - pd * 2;
+  const h = CS - pd * 2;
+  const rx = x + pd;
+  const ry = y + pd;
+  const pulse = 0.45 + 0.55 * Math.sin(now * (sp.type === 'jackpot' ? 0.005 : 0.0025) + sp.id);
 
-  // 底色
-  rrFill(x+pd, y+pd, CS-pd*2, CS-pd*2, 9, sp.bg || '#04051a');
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 5;
+  rrFill(rx, ry, w, h, 10, '#030713');
+  ctx.restore();
+
+  ctx.save();
+  rrPath(rx, ry, w, h, 10);
+  ctx.clip();
+
+  const base = ctx.createLinearGradient(rx, ry, rx + w, ry + h);
+  base.addColorStop(0, th.fillA);
+  base.addColorStop(0.58, th.fillB);
+  base.addColorStop(1, '#030511');
+  ctx.fillStyle = base;
+  ctx.fillRect(rx, ry, w, h);
+
+  const shine = ctx.createLinearGradient(rx, ry, rx, ry + h);
+  shine.addColorStop(0, 'rgba(255,255,255,0.18)');
+  shine.addColorStop(0.28, 'rgba(255,255,255,0.025)');
+  shine.addColorStop(1, 'rgba(0,0,0,0.18)');
+  ctx.fillStyle = shine;
+  ctx.fillRect(rx, ry, w, h);
+
+  ctx.fillStyle = `rgba(${th.glow},${sp.type === 'jackpot' ? 0.13 + pulse * 0.10 : 0.06})`;
+  ctx.beginPath();
+  ctx.arc(rx + w * 0.86, ry + h * 0.12, w * 0.58, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 
   // 動態邊框
   ctx.save();
-  if (sp.type === 'jackpot') {
-    const pulse = 0.5 + 0.5 * Math.sin(now * 0.004);
-    ctx.shadowColor = `rgba(255,109,0,${pulse})`;
-    ctx.shadowBlur  = 14 * pulse;
-    ctx.strokeStyle = `rgba(255,109,0,${0.5 + pulse * 0.5})`;
-    ctx.lineWidth   = 1.5 + pulse * 1.5;
-  } else if (sp.type === 'start') {
-    const pulse = 0.5 + 0.5 * Math.sin(now * 0.0025);
-    ctx.shadowColor = `rgba(255,214,0,${pulse * 0.6})`;
-    ctx.shadowBlur  = 10 * pulse;
-    ctx.strokeStyle = `rgba(255,214,0,${0.4 + pulse * 0.6})`;
-    ctx.lineWidth   = 1.5;
-  } else if (sp.type === 'danger') {
-    ctx.strokeStyle = 'rgba(255,23,68,0.2)';
-    ctx.lineWidth   = 0.8;
-    ctx.shadowBlur  = 0;
-  } else if (sp.type === 'random') {
-    ctx.strokeStyle = 'rgba(206,147,216,0.22)';
-    ctx.lineWidth   = 0.8;
-  } else {
-    ctx.strokeStyle = 'rgba(0,255,136,0.1)';
-    ctx.lineWidth   = 0.8;
-  }
-  rrStroke(x+pd, y+pd, CS-pd*2, CS-pd*2, 9);
+  ctx.shadowColor = `rgba(${th.glow},${sp.type === 'prize' ? 0.12 : 0.32 + pulse * 0.30})`;
+  ctx.shadowBlur = sp.type === 'prize' ? 4 : 9 + pulse * 9;
+  ctx.strokeStyle = `rgba(${th.glow},${sp.type === 'prize' ? 0.32 : 0.55 + pulse * 0.28})`;
+  ctx.lineWidth = sp.type === 'jackpot' ? 2 + pulse * 1.2 : 1.2;
+  rrStroke(rx, ry, w, h, 10);
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 1;
+  rrStroke(rx + 1.5, ry + 1.5, w - 3, h - 3, 8);
   ctx.restore();
 
   // 當前格子高亮
   if (sp.id === G.position) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.lineWidth   = 2;
-    ctx.shadowColor = 'rgba(255,255,255,0.4)';
-    ctx.shadowBlur  = 8;
-    rrStroke(x+pd, y+pd, CS-pd*2, CS-pd*2, 9);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth   = 2.4;
+    ctx.shadowColor = `rgba(${th.glow},0.85)`;
+    ctx.shadowBlur  = 13;
+    rrStroke(rx - 1, ry - 1, w + 2, h + 2, 11);
     ctx.restore();
   }
 
   const cx = x + CS / 2;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
+  // 類型小標
+  ctx.save();
+  ctx.font = `bold ${CS * 0.075}px 'Courier New',monospace`;
+  ctx.fillStyle = `rgba(${th.glow},0.74)`;
+  ctx.textAlign = 'left';
+  ctx.fillText(th.label, rx + CS * 0.10, ry + CS * 0.14);
+  ctx.restore();
+
   // 圖示
-  ctx.font = `${CS * 0.29}px serif`;
+  ctx.save();
+  ctx.shadowColor = `rgba(${th.glow},0.40)`;
+  ctx.shadowBlur = 10;
+  ctx.font = `${CS * (sp.type === 'jackpot' ? 0.31 : 0.285)}px serif`;
   ctx.fillStyle = '#fff';
-  ctx.fillText(sp.icon, cx, y + CS * 0.40);
+  ctx.fillText(sp.icon, cx, y + CS * 0.405);
+  ctx.restore();
 
   // 名稱
-  ctx.font = `${CS * 0.108}px Arial`;
-  ctx.fillStyle = 'rgba(168,210,255,.62)';
+  ctx.font = `bold ${CS * 0.098}px Arial`;
+  ctx.fillStyle = 'rgba(224,241,255,.72)';
   ctx.fillText(sp.name, cx, y + CS * 0.70);
 
   // 倍率標籤
-  ctx.font = `bold ${CS * 0.132}px Arial`;
+  ctx.font = `bold ${CS * 0.116}px Arial`;
+  const tagW = CS * 0.42;
+  const tagH = CS * 0.18;
+  const tagX = cx - tagW / 2;
+  const tagY = y + CS * 0.79;
   if (sp.type === 'prize') {
-    ctx.fillStyle = '#00ff88';
-    ctx.fillText(`×${sp.mult}`, cx, y + CS * 0.875);
+    pill(tagX, tagY, tagW, tagH, th.edge, `×${sp.mult}`);
   } else if (sp.type === 'jackpot') {
-    ctx.fillStyle = '#ff6d00';
-    ctx.fillText(`×${sp.mult}`, cx, y + CS * 0.875);
+    pill(tagX, tagY, tagW, tagH, th.edge, `×${sp.mult}`);
   } else if (sp.type === 'danger') {
-    ctx.fillStyle = '#ff4060';
-    ctx.fillText(`-×${sp.pen}`, cx, y + CS * 0.875);
+    pill(tagX, tagY, tagW, tagH, th.edge, `-×${sp.pen}`);
   } else if (sp.type === 'random') {
-    ctx.fillStyle = '#ce93d8';
-    ctx.fillText('隨機', cx, y + CS * 0.875);
+    pill(tagX, tagY, tagW, tagH, th.edge, '隨機');
   }
 }
 
 // ── 繪製中央面板 ──────────────────────────────────────────────
 function drawCenter() {
-  const pd  = 3;
+  const pd  = Math.max(4, CS * 0.055);
   const ix  = CS + pd, iy = CS + pd;
   const iw  = CS * 3 - pd * 2, ih = CS * 3 - pd * 2;
   const cx  = ix + iw / 2, cy = iy + ih / 2;
   const now = Date.now();
   const lap = G.laps;
   const col = lapColor(lap);
+  const rgb = hexToRgb(col);
+  const glow = `${rgb.r},${rgb.g},${rgb.b}`;
+  const hot = lap >= 4;
 
-  // ── 背景：依圈數改變星雲色調 ────────────────────────────────
   ctx.save();
-  rrPath(ix, iy, iw, ih, 12);
+  ctx.shadowColor = hot ? 'rgba(255,63,100,0.38)' : 'rgba(57,216,255,0.22)';
+  ctx.shadowBlur = 22 + lap * 6;
+  rrFill(ix - 2, iy - 2, iw + 4, ih + 4, 16, hot ? 'rgba(255,63,100,0.08)' : 'rgba(57,216,255,0.06)');
+  ctx.restore();
+
+  // ── 能量核心背景 ────────────────────────────────────────────
+  ctx.save();
+  rrPath(ix, iy, iw, ih, 15);
   ctx.clip();
 
-  const tint = lap === 0 ? '12,0,48'
-             : lap === 1 ? '10,0,40'
-             : lap === 2 ? '20,16,0'
-             : lap === 3 ? '28,20,0'
-             : lap === 4 ? '30,10,0'
-             : '30,0,0';
-  const nebula = ctx.createRadialGradient(cx, cy - ih*0.05, 0, cx, cy, iw * 0.9);
-  nebula.addColorStop(0,   `rgb(${tint})`);
-  nebula.addColorStop(0.5, '#02030e');
-  nebula.addColorStop(1,   '#000108');
+  const nebula = ctx.createRadialGradient(cx, cy - ih * 0.10, 0, cx, cy, iw * 0.78);
+  nebula.addColorStop(0, `rgba(${glow},${hot ? 0.36 : 0.26})`);
+  nebula.addColorStop(0.34, hot ? '#321018' : '#101733');
+  nebula.addColorStop(1, '#03050d');
   ctx.fillStyle = nebula;
+  ctx.fillRect(ix, iy, iw, ih);
+
+  const beam = ctx.createLinearGradient(ix, iy, ix + iw, iy + ih);
+  beam.addColorStop(0, 'rgba(255,255,255,0.16)');
+  beam.addColorStop(0.24, 'rgba(255,255,255,0.025)');
+  beam.addColorStop(0.74, 'rgba(0,0,0,0.08)');
+  beam.addColorStop(1, 'rgba(255,255,255,0.06)');
+  ctx.fillStyle = beam;
   ctx.fillRect(ix, iy, iw, ih);
 
   // 星空
@@ -268,67 +343,83 @@ function drawCenter() {
     ctx.fill();
   });
 
+  // 內部儀表弧線
+  ctx.save();
+  ctx.translate(cx, cy - CS * 0.08);
+  for (let i = 0; i < 4; i++) {
+    ctx.rotate(now * (0.00018 + i * 0.00006));
+    ctx.strokeStyle = `rgba(${glow},${0.08 + i * 0.025})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, CS * (0.65 + i * 0.18), Math.PI * 0.08, Math.PI * (0.64 + i * 0.08));
+    ctx.stroke();
+  }
+  ctx.restore();
+
   // 掃描線
-  ctx.globalAlpha = 0.04;
-  for (let y = iy; y < iy + ih; y += 3) { ctx.fillStyle='#000'; ctx.fillRect(ix,y,iw,1); }
+  ctx.globalAlpha = 0.055;
+  for (let y = iy; y < iy + ih; y += 4) { ctx.fillStyle='#000'; ctx.fillRect(ix,y,iw,1); }
   ctx.globalAlpha = 1;
   ctx.restore();
 
   // ── 邊框：圈數越高越亮 ──────────────────────────────────────
   const borderPulse = 0.4 + 0.6 * Math.sin(now * (0.002 + lap * 0.001));
-  ctx.strokeStyle = lap === 0 ? 'rgba(0,255,136,0.13)' : col;
-  ctx.lineWidth   = lap === 0 ? 1 : 1 + lap * 0.4;
+  ctx.strokeStyle = `rgba(${glow},${lap === 0 ? 0.26 : 0.58 + borderPulse * 0.28})`;
+  ctx.lineWidth   = lap === 0 ? 1.4 : 1.6 + lap * 0.38;
   ctx.shadowColor = col;
-  ctx.shadowBlur  = lap * 6 * borderPulse;
-  rrStroke(ix, iy, iw, ih, 12);
+  ctx.shadowBlur  = 8 + lap * 8 * borderPulse;
+  rrStroke(ix, iy, iw, ih, 15);
   ctx.shadowBlur  = 0;
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  rrStroke(ix + 2, iy + 2, iw - 4, ih - 4, 12);
 
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
-  // ── 旋轉能量環（圈數 ≥ 1 出現）────────────────────────────
-  if (lap >= 1) {
-    const rings = Math.min(lap, 3);
-    for (let r = 0; r < rings; r++) {
-      const rSpeed  = (0.0008 + lap * 0.0004) * (r % 2 === 0 ? 1 : -1);
-      const rRadius = CS * (0.78 + r * 0.14);
-      const rPulse  = 0.5 + 0.5 * Math.sin(now * 0.004 + r * 1.2);
-      ctx.save();
-      ctx.translate(cx, cy - CS * 0.12);
-      ctx.rotate(now * rSpeed);
-      ctx.strokeStyle = col;
-      ctx.lineWidth   = 1.2 + r * 0.4;
-      ctx.globalAlpha = (0.2 + rPulse * 0.35) * (1 - r * 0.18);
-      ctx.setLineDash([6 - r, 8 + r * 2]);
-      ctx.shadowColor = col;
-      ctx.shadowBlur  = 8 * rPulse;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, rRadius, rRadius * 0.45, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-    }
-    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  // ── 旋轉星門 ───────────────────────────────────────────────
+  const rings = lap > 0 ? Math.min(lap + 1, 4) : 1;
+  for (let r = 0; r < rings; r++) {
+    const rSpeed  = (0.00055 + lap * 0.00024) * (r % 2 === 0 ? 1 : -1);
+    const rRadius = CS * (0.70 + r * 0.15);
+    const rPulse  = 0.5 + 0.5 * Math.sin(now * 0.004 + r * 1.2);
+    ctx.save();
+    ctx.translate(cx, cy - CS * 0.10);
+    ctx.rotate(now * rSpeed);
+    ctx.strokeStyle = `rgba(${glow},${0.20 + rPulse * 0.24})`;
+    ctx.lineWidth   = 1 + r * 0.35;
+    ctx.setLineDash([8 - r, 11 + r * 2]);
+    ctx.shadowColor = col;
+    ctx.shadowBlur  = 7 * rPulse;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rRadius, rRadius * 0.45, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 
   // ── 標題 ────────────────────────────────────────────────────
-  ctx.font      = `${CS * 0.112}px 'Courier New',monospace`;
-  ctx.fillStyle = lap === 0 ? 'rgba(0,255,136,0.35)' : col.replace(')', ',0.55)').replace('rgb', 'rgba');
-  ctx.fillText('◈ 宇宙能量池 ◈', cx, iy + CS * 0.26);
+  ctx.font      = `bold ${CS * 0.092}px 'Courier New',monospace`;
+  ctx.fillStyle = `rgba(${glow},0.72)`;
+  ctx.fillText('COSMIC VAULT', cx, iy + CS * 0.23);
 
   // ── 獎池金額（每圈放大）────────────────────────────────────
-  const potCY   = cy - CS * (0.16 + lap * 0.02);  // 隨圈數上移
+  const potCY   = cy - CS * (0.13 + Math.min(lap, 5) * 0.018);
   const baseFS  = G.pot >= 100000 ? CS * 0.24
                 : G.pot >= 10000  ? CS * 0.28
-                : G.pot >= 1000   ? CS * 0.32 : CS * 0.36;
-  const lapFS   = baseFS * (1 + lap * 0.075);      // 每圈 +7.5%
-  const glowAmt = 16 + lap * 10;
+                : G.pot >= 1000   ? CS * 0.33 : CS * 0.39;
+  const lapFS   = baseFS * (1 + Math.min(lap, 5) * 0.055);
+  const glowAmt = 18 + lap * 9;
   const potPulse = 0.45 + 0.55 * Math.sin(now * (0.003 + lap * 0.0015));
 
   ctx.save();
   ctx.font        = `bold ${lapFS}px 'Courier New',monospace`;
   ctx.shadowColor = G.pot > 0 ? col : 'transparent';
   ctx.shadowBlur  = glowAmt * potPulse;
-  ctx.fillStyle   = G.pot > 0 ? col : 'rgba(255,255,255,0.14)';
+  ctx.fillStyle   = G.pot > 0 ? col : 'rgba(255,255,255,0.18)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.62)';
+  ctx.lineWidth = Math.max(3, CS * 0.035);
+  ctx.strokeText('$' + G.pot.toLocaleString(), cx, potCY);
   ctx.fillText('$' + G.pot.toLocaleString(), cx, potCY);
   ctx.restore();
 
@@ -336,58 +427,62 @@ function drawCenter() {
   const mult = cashMult();
   if (lap >= 2) {
     const mPulse = 0.6 + 0.4 * Math.sin(now * (0.003 + lap * 0.001));
-    const mFS    = CS * (0.14 + lap * 0.012);
+    const plateW = CS * 1.72;
+    const plateH = CS * 0.35;
+    const plateX = cx - plateW / 2;
+    const plateY = cy + CS * 0.08;
 
-    // 倍率標籤
     ctx.save();
-    ctx.font        = `bold ${mFS}px Arial`;
-    ctx.shadowColor = `rgba(255,214,0,${mPulse})`;
-    ctx.shadowBlur  = 10 + lap * 3;
-    ctx.fillStyle   = `rgba(255,214,0,${0.65 + mPulse * 0.35})`;
-    ctx.fillText(`× ${mult.toFixed(1)}  提領倍率`, cx, cy + CS * 0.16);
+    ctx.shadowColor = `rgba(255,215,106,${0.24 + mPulse * 0.28})`;
+    ctx.shadowBlur = 14;
+    rrFill(plateX, plateY, plateW, plateH, 10, 'rgba(255,215,106,0.12)');
+    ctx.strokeStyle = `rgba(255,215,106,${0.40 + mPulse * 0.34})`;
+    ctx.lineWidth = 1.2;
+    rrStroke(plateX, plateY, plateW, plateH, 10);
+    ctx.font = `bold ${CS * (0.135 + Math.min(lap, 5) * 0.007)}px Arial`;
+    ctx.fillStyle = `rgba(255,215,106,${0.76 + mPulse * 0.24})`;
+    ctx.fillText(`×${mult.toFixed(1)} 提領倍率`, cx, plateY + plateH * 0.51);
     ctx.restore();
 
-    // 預估金額（大且清晰）
     if (G.pot > 0) {
       const est = Math.floor(G.pot * mult);
-      const eFS = CS * (0.155 + lap * 0.008);
+      const eFS = CS * (0.145 + Math.min(lap, 5) * 0.006);
       ctx.save();
       ctx.font        = `bold ${eFS}px 'Courier New',monospace`;
-      ctx.shadowColor = 'rgba(255,214,0,0.5)';
+      ctx.shadowColor = 'rgba(255,215,106,0.5)';
       ctx.shadowBlur  = 8;
-      ctx.fillStyle   = 'rgba(255,214,0,0.70)';
-      ctx.fillText(`$${est.toLocaleString()}`, cx, cy + CS * 0.36);
+      ctx.fillStyle   = 'rgba(255,232,142,0.78)';
+      ctx.fillText(`可領 $${est.toLocaleString()}`, cx, cy + CS * 0.48);
       ctx.restore();
     }
 
-    // 危險警示（lap ≥ 4）
     if (lap >= 4) {
       const wPulse = 0.3 + 0.7 * Math.abs(Math.sin(now * 0.007));
-      ctx.font      = `bold ${CS * 0.13}px Arial`;
-      ctx.fillStyle = `rgba(255,23,68,${wPulse})`;
-      ctx.fillText('⚠ 高風險地帶 ⚠', cx, cy + CS * 0.56);
+      ctx.font      = `bold ${CS * 0.112}px Arial`;
+      ctx.fillStyle = `rgba(255,63,100,${0.45 + wPulse * 0.45})`;
+      ctx.fillText('⚠ 高風險地帶 ⚠', cx, iy + ih - CS * 0.23);
     }
 
   } else if (lap === 1 && G.canCashOut) {
-    ctx.font      = `${CS * 0.106}px Arial`;
-    ctx.fillStyle = 'rgba(180,200,255,0.42)';
-    ctx.fillText('再繞一圈獲 ×1.5 加成！', cx, cy + CS * 0.25);
+    ctx.font      = `bold ${CS * 0.106}px Arial`;
+    ctx.fillStyle = 'rgba(215,233,245,0.52)';
+    ctx.fillText('再繞一圈獲 ×1.5 加成', cx, cy + CS * 0.28);
 
   } else if (G.pot === 0) {
-    ctx.font      = `${CS * 0.102}px Arial`;
-    ctx.fillStyle = 'rgba(168,204,224,0.26)';
-    ctx.fillText('落在房子贏取獎金', cx, cy + CS * 0.08);
-    ctx.fillText('經過出發點可提領', cx, cy + CS * 0.28);
+    ctx.font      = `${CS * 0.098}px Arial`;
+    ctx.fillStyle = 'rgba(215,233,245,0.38)';
+    ctx.fillText('落在獎勵格累積能量', cx, cy + CS * 0.16);
+    ctx.fillText('經過基地即可提領', cx, cy + CS * 0.34);
   }
 
   // ── 圈數 badge ───────────────────────────────────────────────
   if (lap > 0) {
     const badgePulse = 0.5 + 0.5 * Math.sin(now * (0.002 + lap * 0.001));
-    ctx.font      = `bold ${CS * (0.108 + lap * 0.006)}px 'Courier New',monospace`;
-    ctx.fillStyle = col;
+    ctx.font      = `bold ${CS * (0.100 + Math.min(lap, 5) * 0.006)}px 'Courier New',monospace`;
+    ctx.fillStyle = `rgba(${glow},0.86)`;
     ctx.shadowColor = col;
     ctx.shadowBlur  = 6 * badgePulse;
-    ctx.fillText(`✦ 第 ${lap} 圈 ✦`, cx, iy + ih - CS * 0.25);
+    if (lap < 4) ctx.fillText(`第 ${lap} 圈`, cx, iy + ih - CS * 0.23);
     ctx.shadowBlur = 0;
   }
 }
@@ -511,11 +606,33 @@ function drawBigText() {
 
 // ── 圈數顏色 ──────────────────────────────────────────────────
 function lapColor(laps) {
-  const COLORS = ['#00ff88','#00ff88','#aaff00','#ffd600','#ff8c00','#ff1744'];
+  const COLORS = ['#3cffb0','#3cffb0','#b8ff3c','#ffd76a','#ff9f2f','#ff3f64'];
   return COLORS[Math.min(laps, COLORS.length - 1)];
 }
 
 // ── 工具函數 ──────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return { r: n >> 16 & 255, g: n >> 8 & 255, b: n & 255 };
+}
+
+function pill(x, y, w, h, color, text) {
+  const rgb = hexToRgb(color);
+  ctx.save();
+  ctx.shadowColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.28)`;
+  ctx.shadowBlur = 7;
+  rrFill(x, y, w, h, h / 2, `rgba(${rgb.r},${rgb.g},${rgb.b},0.14)`);
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.52)`;
+  ctx.lineWidth = 1;
+  rrStroke(x, y, w, h, h / 2);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + w / 2, y + h * 0.53);
+  ctx.restore();
+}
+
 function rrPath(x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x+r, y);
