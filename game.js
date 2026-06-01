@@ -382,7 +382,7 @@ function drawCell(sp) {
   // 名稱
   ctx.font = `bold ${CS * 0.094}px Arial`;
   ctx.fillStyle = 'rgba(236,246,255,.78)';
-  ctx.fillText(sp.name, cx, y + CS * 0.70);
+  ctx.fillText(sp.name, cx, y + CS * (isProperty(sp) ? 0.62 : 0.70));
 
   // 倍率標籤
   ctx.font = `bold ${CS * 0.116}px Arial`;
@@ -391,11 +391,7 @@ function drawCell(sp) {
   const tagX = cx - tagW / 2;
   const tagY = y + CS * 0.79;
   const rentMult = propertyMultiplier(sp);
-  if (sp.type === 'prize') {
-    pill(tagX, tagY, tagW, tagH, th.edge, `×${rentMult}`);
-  } else if (sp.type === 'jackpot') {
-    pill(tagX, tagY, tagW, tagH, th.edge, `×${rentMult}`);
-  } else if (sp.type === 'danger') {
+  if (sp.type === 'danger') {
     pill(tagX, tagY, tagW, tagH, th.edge, `-×${sp.pen}`);
   } else if (sp.type === 'random') {
     pill(tagX, tagY, tagW, tagH, th.edge, '隨機');
@@ -835,19 +831,106 @@ function houseLabel(level) {
   return `${level} 棟房屋`;
 }
 
+const SEGMENT_DIGITS = {
+  0: ['a', 'b', 'c', 'd', 'e', 'f'],
+  1: ['b', 'c'],
+  2: ['a', 'b', 'g', 'e', 'd'],
+  3: ['a', 'b', 'c', 'd', 'g'],
+  4: ['f', 'g', 'b', 'c'],
+  5: ['a', 'f', 'g', 'c', 'd'],
+  6: ['a', 'f', 'e', 'd', 'c', 'g'],
+  7: ['a', 'b', 'c'],
+  8: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+  9: ['a', 'b', 'c', 'd', 'f', 'g'],
+};
+
+function drawSegmentDigit(x, y, w, h, digit, color) {
+  const on = new Set(SEGMENT_DIGITS[digit] || []);
+  const t = Math.max(1.2, Math.min(w, h) * 0.16);
+  const r = t * 0.5;
+  const half = h * 0.5;
+  const segments = {
+    a: [x + t, y, w - t * 2, t],
+    b: [x + w - t, y + t * 0.75, t, half - t * 1.2],
+    c: [x + w - t, y + half + t * 0.25, t, half - t * 1.2],
+    d: [x + t, y + h - t, w - t * 2, t],
+    e: [x, y + half + t * 0.25, t, half - t * 1.2],
+    f: [x, y + t * 0.75, t, half - t * 1.2],
+    g: [x + t, y + half - t * 0.5, w - t * 2, t],
+  };
+
+  Object.entries(segments).forEach(([key, box]) => {
+    const [sx, sy, sw, sh] = box;
+    ctx.fillStyle = on.has(key) ? color : 'rgba(255,255,255,0.08)';
+    rrFill(sx, sy, sw, sh, r, ctx.fillStyle);
+  });
+}
+
+function drawMultiplierBadge(cx, cy, mult, th) {
+  const text = String(mult);
+  const digitW = CS * 0.087;
+  const digitH = CS * 0.155;
+  const gap = CS * 0.018;
+  const cross = CS * 0.087;
+  const padX = CS * 0.055;
+  const padY = CS * 0.022;
+  const totalW = padX * 2 + cross + gap + text.length * digitW + (text.length - 1) * gap;
+  const totalH = digitH + padY * 2;
+  const x = cx - totalW * 0.5;
+  const y = cy - totalH * 0.5;
+  const rgb = hexToRgb(th.edge);
+
+  ctx.save();
+  ctx.shadowColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.88)`;
+  ctx.shadowBlur = 14;
+  rrFill(x, y, totalW, totalH, CS * 0.045, 'rgba(2,8,18,0.88)');
+  rrFill(x + CS * 0.010, y + CS * 0.010, totalW - CS * 0.020, totalH * 0.42, CS * 0.030, `rgba(${rgb.r},${rgb.g},${rgb.b},0.20)`);
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = Math.max(1.5, CS * 0.016);
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.82)`;
+  rrStroke(x, y, totalW, totalH, CS * 0.045);
+  ctx.lineWidth = Math.max(1, CS * 0.006);
+  ctx.strokeStyle = 'rgba(255,255,255,0.42)';
+  rrStroke(x + CS * 0.004, y + CS * 0.004, totalW - CS * 0.008, totalH - CS * 0.008, CS * 0.040);
+
+  const gx = x + padX;
+  const gy = y + padY;
+  ctx.lineWidth = Math.max(3, CS * 0.026);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#ffffff';
+  ctx.shadowColor = th.edge;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.moveTo(gx + cross * 0.18, gy + digitH * 0.22);
+  ctx.lineTo(gx + cross * 0.82, gy + digitH * 0.78);
+  ctx.moveTo(gx + cross * 0.82, gy + digitH * 0.22);
+  ctx.lineTo(gx + cross * 0.18, gy + digitH * 0.78);
+  ctx.stroke();
+
+  ctx.shadowBlur = 9;
+  let dx = gx + cross + gap;
+  for (const ch of text) {
+    drawSegmentDigit(dx, gy, digitW, digitH, Number(ch), '#ffffff');
+    dx += digitW + gap;
+  }
+  ctx.restore();
+}
+
 function drawHouseLevel(x, y, w, h, sp, th) {
   const level = propertyLevel(sp);
+  const baseScale = 0.82 + Math.min(sp.mult, 8) * 0.055;
+  const levelScale = level * 0.052;
   const bx = x + w * 0.50;
-  const by = y + h * 0.63;
-  const bw = w * (level >= MAX_HOUSE_LEVEL ? 0.58 : 0.50);
-  const bd = h * 0.20;
-  const bh = h * (0.26 + Math.max(1, level) * 0.072);
+  const by = y + h * (0.66 - (baseScale - 1) * 0.06);
+  const bw = w * (level >= MAX_HOUSE_LEVEL ? 0.58 : 0.50) * baseScale;
+  const bd = h * 0.20 * baseScale;
+  const bh = h * (0.16 + sp.mult * 0.035 + levelScale) * baseScale;
   const active = level > 0;
   const rgb = hexToRgb(th.edge);
 
   ctx.save();
-  ctx.shadowColor = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)` : 'rgba(0,0,0,0.35)';
-  ctx.shadowBlur = active ? 10 : 4;
+  ctx.shadowColor = `rgba(${rgb.r},${rgb.g},${rgb.b},${active ? 0.45 : 0.22})`;
+  ctx.shadowBlur = active ? 10 : 6;
 
   // ground pad
   ctx.beginPath();
@@ -856,20 +939,11 @@ function drawHouseLevel(x, y, w, h, sp, th) {
   ctx.lineTo(bx + bw * 0.66, by + bd * 0.14);
   ctx.lineTo(bx, by + bd * 0.80);
   ctx.closePath();
-  ctx.fillStyle = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)` : 'rgba(255,255,255,0.08)';
+  ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${active ? 0.18 : 0.10})`;
   ctx.fill();
-  ctx.strokeStyle = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.42)` : 'rgba(255,255,255,0.14)';
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${active ? 0.42 : 0.26})`;
   ctx.lineWidth = 1;
   ctx.stroke();
-
-  if (!active) {
-    ctx.font = `bold ${CS * 0.082}px 'Courier New',monospace`;
-    ctx.fillStyle = 'rgba(255,255,255,0.28)';
-    ctx.textAlign = 'center';
-    ctx.fillText('LOT', bx, by + bd * 0.18);
-    ctx.restore();
-    return;
-  }
 
   const topY = by - bh;
   const left = bx - bw * 0.44;
@@ -899,27 +973,90 @@ function drawHouseLevel(x, y, w, h, sp, th) {
   ctx.fill();
 
   // roof/top face
+  const roofColor = level >= MAX_HOUSE_LEVEL ? '#ffd76a' : sp.mult >= 4 ? '#ff9f2f' : '#eaf6ff';
   ctx.beginPath();
   ctx.moveTo(left, topY + bd * 0.52);
   ctx.lineTo(bx - bw * 0.16, topY);
   ctx.lineTo(bx + bw * 0.62, topY + bd * 0.34);
   ctx.lineTo(right, topY + bd * 0.82);
   ctx.closePath();
-  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? '#ffd76a' : 'rgba(255,255,255,0.72)';
+  ctx.fillStyle = roofColor;
   ctx.fill();
   ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.58)`;
   ctx.stroke();
 
+  // connected gable/eave sits directly on the wall top edge.
+  ctx.beginPath();
+  ctx.moveTo(left - bw * 0.05, topY + bd * 0.56);
+  ctx.lineTo(bx - bw * 0.06, topY + bd * 0.08);
+  ctx.lineTo(right + bw * 0.05, topY + bd * 0.86);
+  ctx.lineTo(right - bw * 0.01, topY + bd * 0.98);
+  ctx.lineTo(left + bw * 0.02, topY + bd * 0.68);
+  ctx.closePath();
+  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? '#ffe89a' : sp.mult >= 4 ? '#ffbf47' : 'rgba(255,255,255,0.88)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.stroke();
+
+  // roof thickness under the eave
+  ctx.beginPath();
+  ctx.moveTo(left - bw * 0.05, topY + bd * 0.56);
+  ctx.lineTo(left + bw * 0.02, topY + bd * 0.68);
+  ctx.lineTo(right - bw * 0.01, topY + bd * 0.98);
+  ctx.lineTo(right + bw * 0.05, topY + bd * 0.86);
+  ctx.lineTo(right + bw * 0.05, topY + bd * 1.02);
+  ctx.lineTo(right - bw * 0.02, topY + bd * 1.14);
+  ctx.lineTo(left, topY + bd * 0.84);
+  ctx.lineTo(left - bw * 0.06, topY + bd * 0.70);
+  ctx.closePath();
+  ctx.fillStyle = level >= MAX_HOUSE_LEVEL
+    ? 'rgba(196,132,20,0.86)'
+    : sp.mult >= 4 ? 'rgba(170,80,20,0.82)' : 'rgba(120,145,160,0.78)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(left - bw * 0.06, topY + bd * 0.70);
+  ctx.lineTo(right + bw * 0.07, topY + bd * 1.00);
+  ctx.lineWidth = Math.max(1, CS * 0.012);
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.72)`;
+  ctx.stroke();
+  ctx.lineWidth = 1;
+
   // windows
-  const rows = Math.min(4, level);
-  const cols = level >= 4 ? 3 : 2;
-  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? 'rgba(33,18,0,0.72)' : 'rgba(2,8,18,0.58)';
+  const rows = Math.max(1, Math.min(4, level + Math.floor(sp.mult / 3)));
+  const cols = sp.mult >= 4 || level >= 4 ? 3 : 2;
+  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? 'rgba(33,18,0,0.72)' : 'rgba(3,16,31,0.64)';
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const wx = left + bw * (0.19 + c * 0.23);
       const wy = topY + bd * 0.96 + r * bh * 0.15;
-      ctx.fillRect(wx, wy, bw * 0.115, bh * 0.075);
+      rrFill(wx, wy, bw * 0.115, Math.max(2, bh * 0.072), 2, ctx.fillStyle);
     }
+  }
+
+  // door and entry light
+  const doorW = bw * 0.14;
+  const doorH = Math.max(CS * 0.055, bh * 0.18);
+  rrFill(bx - doorW * 0.5, by - doorH * 0.72, doorW, doorH, 3, 'rgba(0,0,0,0.48)');
+  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? '#ffd76a' : th.edge;
+  ctx.beginPath();
+  ctx.arc(bx + doorW * 0.26, by - doorH * 0.30, Math.max(1, CS * 0.01), 0, Math.PI * 2);
+  ctx.fill();
+
+  // sign / antenna for richer high-value properties
+  if (sp.mult >= 3) {
+    ctx.save();
+    ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.75)`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(bx + bw * 0.34, topY + bd * 0.10);
+    ctx.lineTo(bx + bw * 0.34, topY - bd * 0.38);
+    ctx.stroke();
+    ctx.fillStyle = sp.mult >= 5 ? '#ffd76a' : th.edge;
+    ctx.beginPath();
+    ctx.arc(bx + bw * 0.34, topY - bd * 0.43, Math.max(2, CS * 0.025), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   if (level >= MAX_HOUSE_LEVEL) {
@@ -931,13 +1068,7 @@ function drawHouseLevel(x, y, w, h, sp, th) {
   }
 
   ctx.shadowBlur = 0;
-  ctx.font = `bold ${CS * 0.082}px 'Courier New',monospace`;
-  ctx.fillStyle = 'rgba(255,255,255,0.82)';
-  ctx.textAlign = 'center';
-  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-  ctx.lineWidth = 2;
-  ctx.strokeText(`L${level}`, bx, by + bd * 1.26);
-  ctx.fillText(`L${level}`, bx, by + bd * 1.26);
+  drawMultiplierBadge(x + w * 0.50, y + h * 0.875, propertyMultiplier(sp), th);
   ctx.restore();
 }
 
@@ -1145,6 +1276,81 @@ function setStageDieFace(el, face) {
   el.style.setProperty('--final-rot', rotations[face]);
 }
 
+function pickFortuneOptions() {
+  const pool = [0, 0, 1, 2, 3, 5];
+  const options = [];
+  while (options.length < 3) {
+    options.push(pool[Math.floor(Math.random() * pool.length)]);
+  }
+  if (options.every(v => v === 0)) options[Math.floor(Math.random() * 3)] = 1;
+  return options;
+}
+
+function setFortuneCardFace(card, mult) {
+  const isReward = mult > 0;
+  card.classList.toggle('reward', isReward);
+  card.classList.toggle('blank', !isReward);
+  card.querySelector('.card-art').textContent = isReward ? '🏠' : '🌫️';
+  card.querySelector('.card-title').textContent = isReward ? '租金契約' : '星塵空卡';
+  card.querySelector('.card-result').textContent = isReward ? `獎池 + 投資 ×${mult}` : '沒有收益';
+  card.querySelector('.card-desc').textContent = isReward
+    ? `立即把本回合投資的 ${mult} 倍加入租金池。`
+    : '本張命運卡不增加獎池，繼續前進等待下一次機會。';
+}
+
+function animateFortuneCard() {
+  const stage = document.getElementById('card-stage');
+  const cards = Array.from(document.querySelectorAll('.fortune-card'));
+  const options = pickFortuneOptions();
+
+  cards.forEach((card, i) => {
+    card.classList.remove('draw', 'flip', 'peek', 'chosen', 'revealed', 'reward', 'blank');
+    setFortuneCardFace(card, options[i]);
+    card.disabled = false;
+    card.style.animationDelay = `${i * 70}ms`;
+  });
+
+  stage.classList.remove('hidden');
+  void cards[0].offsetWidth;
+  cards.forEach(card => card.classList.add('draw'));
+  setStatus('🎴 三選一，點選命運卡');
+
+  return new Promise(resolve => {
+    const reveal = ev => {
+      const chosen = ev.currentTarget;
+      const chosenIdx = Number(chosen.dataset.card);
+      cards.forEach(card => {
+        card.removeEventListener('click', reveal);
+        card.disabled = true;
+      });
+      AUDIO.random();
+      chosen.classList.add('chosen', 'flip', 'revealed');
+      setStatus('🎴 你選中的命運卡翻開了！');
+
+      setTimeout(() => {
+        cards.forEach((card, i) => {
+          if (i !== chosenIdx) card.classList.add('peek', 'revealed');
+        });
+        setStatus('🎴 其他命運卡也揭曉了');
+      }, 920);
+
+      setTimeout(() => {
+        stage.classList.add('hidden');
+        cards.forEach(card => {
+          card.classList.remove('draw', 'flip', 'peek', 'chosen', 'revealed', 'reward', 'blank');
+          card.disabled = false;
+          card.style.animationDelay = '';
+        });
+        resolve(options[chosenIdx]);
+      }, 2100);
+    };
+
+    setTimeout(() => {
+      cards.forEach(card => card.addEventListener('click', reveal));
+    }, 360);
+  });
+}
+
 // ── 棋子移動動畫 ──────────────────────────────────────────────
 function animateMove(steps) {
   let moved = 0, passedStart = false;
@@ -1185,7 +1391,7 @@ function animateMove(steps) {
 }
 
 // ── 落點處理 ──────────────────────────────────────────────────
-function resolveSpace(passedStart) {
+async function resolveSpace(passedStart) {
   const sp  = SPACES[G.position];
   const bet = BET_LEVELS[G.betIdx];
   const [tx, ty] = tokenXY();
@@ -1251,8 +1457,7 @@ function resolveSpace(passedStart) {
   } else if (sp.type === 'random') {
     AUDIO.random();
     flashAt(tx, ty, '#b985ff', CS * 1.25);
-    const RMULTS = [0, 0, 1, 2, 3, 5];
-    const rm = RMULTS[Math.floor(Math.random() * RMULTS.length)];
+    const rm = await animateFortuneCard();
     if (rm > 0) {
       const earn = bet * rm;
       G.pot += earn;
