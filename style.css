@@ -206,6 +206,8 @@ body::after{
 
 .hidden{display:none!important}
 .invisible{visibility:hidden}
+/* cash-btn 隱藏時保留佔位，避免控制列高度變動影響棋盤 */
+#cash-btn.hidden{display:block!important;visibility:hidden!important}
 
 #dice-wrap{
   display:none!important;align-items:center;justify-content:center;gap:8px;
