@@ -1,36 +1,37 @@
 'use strict';
 // ════════════════════════════════════════════════════════════
-//  星際賭場 — 外星人博彩遊戲
+//  星際大富翁 — 外星地產棋盤遊戲
 // ════════════════════════════════════════════════════════════
 
 const DICE_EMOJI = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 const BET_LEVELS = [10, 25, 50, 100, 200, 500];
+const MAX_HOUSE_LEVEL = 5;
 
 const SPACES = [
-  { id:0,  name:'星際基地', type:'start',   icon:'🛸', bg:'#1e0e00', bdr:'#ffd600' },
-  { id:1,  name:'隕石坑',   type:'prize',   icon:'🌠', mult:1, bg:'#001e0e' },
-  { id:2,  name:'能量水晶', type:'prize',   icon:'💎', mult:3, bg:'#000e28' },
-  { id:3,  name:'異次元',   type:'random',  icon:'🌀', bg:'#140030' },
-  { id:4,  name:'黑洞',     type:'danger',  icon:'⚫', pen:1,  bg:'#1e0000' },
-  { id:5,  name:'外星基地', type:'prize',   icon:'👾', mult:2, bg:'#001e0e' },
-  { id:6,  name:'超新星',   type:'prize',   icon:'⭐', mult:5, bg:'#1e1000' },
-  { id:7,  name:'蟲洞',     type:'danger',  icon:'🌪️', pen:2,  bg:'#1e0000' },
-  { id:8,  name:'暗物質',   type:'prize',   icon:'🔮', mult:3, bg:'#0a0022' },
-  { id:9,  name:'隕石坑',   type:'prize',   icon:'🌠', mult:1, bg:'#001e0e' },
-  { id:10, name:'宇宙爆炸', type:'jackpot', icon:'💥', mult:8, bg:'#200010', bdr:'#ff6d00' },
-  { id:11, name:'異次元',   type:'random',  icon:'🌀', bg:'#140030' },
-  { id:12, name:'黑洞',     type:'danger',  icon:'⚫', pen:1,  bg:'#1e0000' },
-  { id:13, name:'外星文明', type:'prize',   icon:'🗿', mult:3, bg:'#001e0e' },
-  { id:14, name:'宇宙寶藏', type:'prize',   icon:'🚀', mult:4, bg:'#1e1000' },
-  { id:15, name:'隕石坑',   type:'prize',   icon:'🌠', mult:1, bg:'#001e0e' },
+  { id:0,  name:'起點基地', type:'start',   icon:'🛸', bg:'#1e0e00', bdr:'#ffd600' },
+  { id:1,  name:'隕石小屋', type:'prize',   icon:'🏠', mult:1, bg:'#001e0e' },
+  { id:2,  name:'水晶公寓', type:'prize',   icon:'🏢', mult:3, bg:'#000e28' },
+  { id:3,  name:'命運卡',   type:'random',  icon:'🎴', bg:'#140030' },
+  { id:4,  name:'太空稅',   type:'danger',  icon:'💸', pen:1,  bg:'#1e0000' },
+  { id:5,  name:'外星商圈', type:'prize',   icon:'🏬', mult:2, bg:'#001e0e' },
+  { id:6,  name:'超新星飯店', type:'prize', icon:'🏨', mult:5, bg:'#1e1000' },
+  { id:7,  name:'維修費',   type:'danger',  icon:'🧾', pen:2,  bg:'#1e0000' },
+  { id:8,  name:'暗物質豪宅', type:'prize', icon:'🏡', mult:3, bg:'#0a0022' },
+  { id:9,  name:'軌道別墅', type:'prize',   icon:'🏘️', mult:1, bg:'#001e0e' },
+  { id:10, name:'銀河地標', type:'jackpot', icon:'🏰', mult:8, bg:'#200010', bdr:'#ff6d00' },
+  { id:11, name:'命運卡',   type:'random',  icon:'🎴', bg:'#140030' },
+  { id:12, name:'歸零危機', type:'danger',  icon:'💣', pen:1, wipePot:true, bg:'#1e0000' },
+  { id:13, name:'文明古城', type:'prize',   icon:'🏛️', mult:3, bg:'#001e0e' },
+  { id:14, name:'火箭車站', type:'prize',   icon:'🚉', mult:4, bg:'#1e1000' },
+  { id:15, name:'月球民宿', type:'prize',   icon:'🏚️', mult:1, bg:'#001e0e' },
 ];
 
 const SPACE_THEME = {
-  start:   { edge:'#ffd76a', glow:'255,215,106', fillA:'#2a1b05', fillB:'#090e18', label:'START' },
-  prize:   { edge:'#3cffb0', glow:'60,255,176',  fillA:'#082419', fillB:'#07111e', label:'WIN' },
-  random:  { edge:'#b985ff', glow:'185,133,255', fillA:'#20103d', fillB:'#090d1b', label:'WILD' },
-  danger:  { edge:'#ff3f64', glow:'255,63,100',  fillA:'#2b0712', fillB:'#0b0b15', label:'RISK' },
-  jackpot: { edge:'#ff9f2f', glow:'255,159,47',  fillA:'#331006', fillB:'#140816', label:'MAX' },
+  start:   { edge:'#ffd76a', glow:'255,215,106', fillA:'#2a1b05', fillB:'#090e18', label:'GO' },
+  prize:   { edge:'#3cffb0', glow:'60,255,176',  fillA:'#082419', fillB:'#07111e', label:'RENT' },
+  random:  { edge:'#b985ff', glow:'185,133,255', fillA:'#20103d', fillB:'#090d1b', label:'CARD' },
+  danger:  { edge:'#ff3f64', glow:'255,63,100',  fillA:'#2b0712', fillB:'#0b0b15', label:'TAX' },
+  jackpot: { edge:'#ff9f2f', glow:'255,159,47',  fillA:'#331006', fillB:'#140816', label:'LAND' },
 };
 
 // 格子在 5×5 網格中的位置
@@ -46,12 +47,14 @@ const G = {
   balance: 1000, pot: 0, betIdx: 2,
   position: 0, laps: 0,
   canCashOut: false, animating: false, totalWon: 0,
+  houseLevels: Array(16).fill(0),
 };
 
 // ── 特效狀態 ──────────────────────────────────────────────────
 const PS = [];       // 粒子: {x,y,vx,vy,r,color,alpha,decay,grav}
 const FT = [];       // 浮動文字: {x,y,text,color,alpha}
 let   BT = null;     // 大字幕: {text,color,alpha,age,dur}
+let   FX = null;     // 畫面聚光: {x,y,color,alpha,decay,r}
 
 // 星空背景（固定點位）
 const STARS = Array.from({length:60}, () => ({
@@ -85,7 +88,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function resizeBoard() {
   const wrap = document.getElementById('board-wrap');
-  const sz   = Math.min(wrap.clientWidth, wrap.clientHeight) - 4;
+  const st = getComputedStyle(wrap);
+  const padX = parseFloat(st.paddingLeft) + parseFloat(st.paddingRight);
+  const padY = parseFloat(st.paddingTop) + parseFloat(st.paddingBottom);
+  const sz   = Math.max(240, Math.min(wrap.clientWidth - padX, wrap.clientHeight - padY) - 4);
   BS = sz; CS = sz / 5;
   canvas.width = sz; canvas.height = sz;
 }
@@ -125,6 +131,11 @@ function loop(ts) {
     if (FT[i].alpha <= 0) FT.splice(i, 1);
   }
 
+  if (FX) {
+    FX.alpha -= FX.decay;
+    if (FX.alpha <= 0) FX = null;
+  }
+
   // 更新大字幕
   if (BT) {
     BT.age += 27;
@@ -147,6 +158,8 @@ function draw() {
   bg.addColorStop(0.42, '#050916');
   bg.addColorStop(1, '#020309');
   rrFill(0, 0, BS, BS, 16, bg);
+
+  drawBoardChrome();
 
   ctx.save();
   ctx.strokeStyle = 'rgba(255,255,255,0.055)';
@@ -179,15 +192,50 @@ function draw() {
   drawToken();
 
   // 繪製特效（疊加在最上層）
+  drawSpotlight();
   drawParticles();
   drawFloatTexts();
   drawBigText();
 }
 
+function drawBoardChrome() {
+  const now = Date.now();
+  const pulse = 0.45 + 0.55 * Math.sin(now * 0.0024);
+
+  ctx.save();
+  const bezel = ctx.createLinearGradient(0, 0, BS, BS);
+  bezel.addColorStop(0, 'rgba(255,255,255,0.16)');
+  bezel.addColorStop(0.18, 'rgba(255,215,106,0.10)');
+  bezel.addColorStop(0.52, 'rgba(2,4,10,0.28)');
+  bezel.addColorStop(1, 'rgba(57,216,255,0.14)');
+  ctx.strokeStyle = bezel;
+  ctx.lineWidth = Math.max(7, CS * 0.06);
+  rrStroke(5, 5, BS - 10, BS - 10, 18);
+
+  ctx.strokeStyle = `rgba(255,215,106,${0.16 + pulse * 0.10})`;
+  ctx.lineWidth = 1.4;
+  ctx.setLineDash([CS * 0.12, CS * 0.08]);
+  rrStroke(CS * 0.11, CS * 0.11, BS - CS * 0.22, BS - CS * 0.22, 14);
+  ctx.setLineDash([]);
+
+  for (let i = 0; i < 18; i++) {
+    const a = i / 18 * Math.PI * 2 + now * 0.0005;
+    const x = BS / 2 + Math.cos(a) * (BS * 0.485);
+    const y = BS / 2 + Math.sin(a) * (BS * 0.485);
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(1.3, CS * 0.018), 0, Math.PI * 2);
+    ctx.fillStyle = i % 2 ? `rgba(57,216,255,${0.16 + pulse * 0.15})` : `rgba(255,215,106,${0.18 + pulse * 0.18})`;
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 6;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 // ── 繪製格子 ──────────────────────────────────────────────────
 function drawCell(sp) {
   const [col, row] = spaceGrid(sp.id);
-  const x = col * CS, y = row * CS, pd = Math.max(3, CS * 0.045);
+  const x = col * CS, y = row * CS, pd = Math.max(4, CS * 0.055);
   const now = Date.now();
   const th = SPACE_THEME[sp.type];
   const w = CS - pd * 2;
@@ -197,10 +245,31 @@ function drawCell(sp) {
   const pulse = 0.45 + 0.55 * Math.sin(now * (sp.type === 'jackpot' ? 0.005 : 0.0025) + sp.id);
 
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur = 12;
-  ctx.shadowOffsetY = 5;
-  rrFill(rx, ry, w, h, 10, '#030713');
+  ctx.shadowColor = 'rgba(0,0,0,0.68)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 7;
+  rrFill(rx + CS * 0.035, ry + CS * 0.045, w, h, 11, '#02040b');
+  ctx.restore();
+
+  // 2.5D 地塊厚度，不扭曲文字與房屋本體
+  const depth = CS * 0.055;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.34)';
+  ctx.beginPath();
+  ctx.moveTo(rx + 10, ry + h);
+  ctx.lineTo(rx + w, ry + h);
+  ctx.lineTo(rx + w + depth, ry + h + depth);
+  ctx.lineTo(rx + 10 + depth, ry + h + depth);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = `rgba(${th.glow},0.10)`;
+  ctx.beginPath();
+  ctx.moveTo(rx + w, ry + 10);
+  ctx.lineTo(rx + w, ry + h);
+  ctx.lineTo(rx + w + depth, ry + h + depth);
+  ctx.lineTo(rx + w + depth, ry + 10 + depth);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 
   ctx.save();
@@ -208,9 +277,10 @@ function drawCell(sp) {
   ctx.clip();
 
   const base = ctx.createLinearGradient(rx, ry, rx + w, ry + h);
-  base.addColorStop(0, th.fillA);
-  base.addColorStop(0.58, th.fillB);
-  base.addColorStop(1, '#030511');
+  base.addColorStop(0, '#2c394e');
+  base.addColorStop(0.08, th.fillA);
+  base.addColorStop(0.55, th.fillB);
+  base.addColorStop(1, '#02030a');
   ctx.fillStyle = base;
   ctx.fillRect(rx, ry, w, h);
 
@@ -221,23 +291,32 @@ function drawCell(sp) {
   ctx.fillStyle = shine;
   ctx.fillRect(rx, ry, w, h);
 
-  ctx.fillStyle = `rgba(${th.glow},${sp.type === 'jackpot' ? 0.13 + pulse * 0.10 : 0.06})`;
+  ctx.fillStyle = `rgba(${th.glow},${sp.type === 'jackpot' ? 0.18 + pulse * 0.16 : 0.08})`;
   ctx.beginPath();
   ctx.arc(rx + w * 0.86, ry + h * 0.12, w * 0.58, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.strokeStyle = `rgba(${th.glow},0.09)`;
+  ctx.lineWidth = 1;
+  for (let yy = ry + h * 0.20; yy < ry + h; yy += Math.max(5, CS * 0.08)) {
+    ctx.beginPath();
+    ctx.moveTo(rx + w * 0.10, yy);
+    ctx.lineTo(rx + w * 0.90, yy);
+    ctx.stroke();
+  }
   ctx.restore();
 
   // 動態邊框
   ctx.save();
-  ctx.shadowColor = `rgba(${th.glow},${sp.type === 'prize' ? 0.12 : 0.32 + pulse * 0.30})`;
-  ctx.shadowBlur = sp.type === 'prize' ? 4 : 9 + pulse * 9;
-  ctx.strokeStyle = `rgba(${th.glow},${sp.type === 'prize' ? 0.32 : 0.55 + pulse * 0.28})`;
-  ctx.lineWidth = sp.type === 'jackpot' ? 2 + pulse * 1.2 : 1.2;
-  rrStroke(rx, ry, w, h, 10);
+  ctx.shadowColor = `rgba(${th.glow},${sp.type === 'prize' ? 0.16 : 0.36 + pulse * 0.34})`;
+  ctx.shadowBlur = sp.type === 'prize' ? 6 : 12 + pulse * 11;
+  ctx.strokeStyle = `rgba(${th.glow},${sp.type === 'prize' ? 0.38 : 0.62 + pulse * 0.26})`;
+  ctx.lineWidth = sp.type === 'jackpot' ? 2.5 + pulse * 1.3 : 1.4;
+  rrStroke(rx, ry, w, h, 11);
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.14)';
   ctx.lineWidth = 1;
-  rrStroke(rx + 1.5, ry + 1.5, w - 3, h - 3, 8);
+  rrStroke(rx + 1.5, ry + 1.5, w - 3, h - 3, 9);
   ctx.restore();
 
   // 當前格子高亮
@@ -262,18 +341,47 @@ function drawCell(sp) {
   ctx.fillText(th.label, rx + CS * 0.10, ry + CS * 0.14);
   ctx.restore();
 
-  // 圖示
-  ctx.save();
-  ctx.shadowColor = `rgba(${th.glow},0.40)`;
-  ctx.shadowBlur = 10;
-  ctx.font = `${CS * (sp.type === 'jackpot' ? 0.31 : 0.285)}px serif`;
-  ctx.fillStyle = '#fff';
-  ctx.fillText(sp.icon, cx, y + CS * 0.405);
-  ctx.restore();
+  let badgeR = CS * 0.245;
+  let badgeY = y + CS * 0.405;
+
+  if (isProperty(sp)) {
+    drawHouseLevel(rx, ry, w, h, sp, th);
+  } else {
+    // 徽章底座，降低 emoji 的突兀感
+    ctx.save();
+    const badge = ctx.createRadialGradient(cx - badgeR * 0.25, badgeY - badgeR * 0.35, badgeR * 0.1, cx, badgeY, badgeR);
+    badge.addColorStop(0, 'rgba(255,255,255,0.34)');
+    badge.addColorStop(0.34, `rgba(${th.glow},0.22)`);
+    badge.addColorStop(1, 'rgba(0,0,0,0.34)');
+    ctx.fillStyle = badge;
+    ctx.shadowColor = `rgba(${th.glow},0.32)`;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, badgeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${th.glow},0.50)`;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, badgeR * 0.76, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // 圖示
+    ctx.save();
+    ctx.shadowColor = `rgba(${th.glow},0.40)`;
+    ctx.shadowBlur = 10;
+    ctx.font = `${CS * (sp.type === 'jackpot' ? 0.255 : 0.235)}px serif`;
+    ctx.fillStyle = '#fff';
+    ctx.fillText(sp.icon, cx, badgeY + CS * 0.005);
+    ctx.restore();
+  }
 
   // 名稱
-  ctx.font = `bold ${CS * 0.098}px Arial`;
-  ctx.fillStyle = 'rgba(224,241,255,.72)';
+  ctx.font = `bold ${CS * 0.094}px Arial`;
+  ctx.fillStyle = 'rgba(236,246,255,.78)';
   ctx.fillText(sp.name, cx, y + CS * 0.70);
 
   // 倍率標籤
@@ -282,15 +390,19 @@ function drawCell(sp) {
   const tagH = CS * 0.18;
   const tagX = cx - tagW / 2;
   const tagY = y + CS * 0.79;
+  const rentMult = propertyMultiplier(sp);
   if (sp.type === 'prize') {
-    pill(tagX, tagY, tagW, tagH, th.edge, `×${sp.mult}`);
+    pill(tagX, tagY, tagW, tagH, th.edge, `×${rentMult}`);
   } else if (sp.type === 'jackpot') {
-    pill(tagX, tagY, tagW, tagH, th.edge, `×${sp.mult}`);
+    pill(tagX, tagY, tagW, tagH, th.edge, `×${rentMult}`);
   } else if (sp.type === 'danger') {
     pill(tagX, tagY, tagW, tagH, th.edge, `-×${sp.pen}`);
   } else if (sp.type === 'random') {
     pill(tagX, tagY, tagW, tagH, th.edge, '隨機');
   }
+
+  if (sp.type === 'danger') drawHazardStripes(rx, ry, w, h, th, pulse);
+  if (sp.type === 'random') drawWarpMark(cx, badgeY, badgeR, th, now);
 }
 
 // ── 繪製中央面板 ──────────────────────────────────────────────
@@ -312,7 +424,7 @@ function drawCenter() {
   rrFill(ix - 2, iy - 2, iw + 4, ih + 4, 16, hot ? 'rgba(255,63,100,0.08)' : 'rgba(57,216,255,0.06)');
   ctx.restore();
 
-  // ── 能量核心背景 ────────────────────────────────────────────
+  // ── 金彩金庫背景 ────────────────────────────────────────────
   ctx.save();
   rrPath(ix, iy, iw, ih, 15);
   ctx.clip();
@@ -330,6 +442,13 @@ function drawCenter() {
   beam.addColorStop(0.74, 'rgba(0,0,0,0.08)');
   beam.addColorStop(1, 'rgba(255,255,255,0.06)');
   ctx.fillStyle = beam;
+  ctx.fillRect(ix, iy, iw, ih);
+
+  const vaultGlow = ctx.createRadialGradient(cx, cy - CS * 0.10, 0, cx, cy - CS * 0.10, CS * 1.25);
+  vaultGlow.addColorStop(0, `rgba(${glow},0.20)`);
+  vaultGlow.addColorStop(0.46, 'rgba(255,215,106,0.05)');
+  vaultGlow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = vaultGlow;
   ctx.fillRect(ix, iy, iw, ih);
 
   // 星空
@@ -355,6 +474,22 @@ function drawCenter() {
     ctx.stroke();
   }
   ctx.restore();
+
+  // 彩金能量槽
+  const meterW = iw * 0.70;
+  const meterH = Math.max(7, CS * 0.07);
+  const meterX = cx - meterW / 2;
+  const meterY = iy + ih - CS * 0.45;
+  const meterFill = Math.min(1, (G.pot / Math.max(1, BET_LEVELS[G.betIdx] * 30)) + lap * 0.10);
+  rrFill(meterX, meterY, meterW, meterH, meterH / 2, 'rgba(0,0,0,0.38)');
+  const mg = ctx.createLinearGradient(meterX, meterY, meterX + meterW, meterY);
+  mg.addColorStop(0, '#39d8ff');
+  mg.addColorStop(0.48, col);
+  mg.addColorStop(1, hot ? '#ff3f64' : '#ffd76a');
+  rrFill(meterX + 2, meterY + 2, Math.max(0, (meterW - 4) * meterFill), meterH - 4, meterH / 2, mg);
+  ctx.strokeStyle = `rgba(${glow},0.38)`;
+  ctx.lineWidth = 1;
+  rrStroke(meterX, meterY, meterW, meterH, meterH / 2);
 
   // 掃描線
   ctx.globalAlpha = 0.055;
@@ -399,12 +534,20 @@ function drawCenter() {
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 
   // ── 標題 ────────────────────────────────────────────────────
-  ctx.font      = `bold ${CS * 0.092}px 'Courier New',monospace`;
-  ctx.fillStyle = `rgba(${glow},0.72)`;
-  ctx.fillText('COSMIC VAULT', cx, iy + CS * 0.23);
+  ctx.save();
+  const marqueeW = CS * 1.68;
+  const marqueeH = CS * 0.23;
+  rrFill(cx - marqueeW / 2, iy + CS * 0.12, marqueeW, marqueeH, 7, 'rgba(0,0,0,0.38)');
+  ctx.strokeStyle = `rgba(${glow},0.34)`;
+  ctx.lineWidth = 1;
+  rrStroke(cx - marqueeW / 2, iy + CS * 0.12, marqueeW, marqueeH, 7);
+  ctx.font      = `bold ${CS * 0.084}px 'Courier New',monospace`;
+  ctx.fillStyle = `rgba(${glow},0.82)`;
+  ctx.fillText('RENT VAULT', cx, iy + CS * 0.235);
+  ctx.restore();
 
   // ── 獎池金額（每圈放大）────────────────────────────────────
-  const potCY   = cy - CS * (0.13 + Math.min(lap, 5) * 0.018);
+  const potCY   = cy - CS * (0.12 + Math.min(lap, 5) * 0.018);
   const baseFS  = G.pot >= 100000 ? CS * 0.24
                 : G.pot >= 10000  ? CS * 0.28
                 : G.pot >= 1000   ? CS * 0.33 : CS * 0.39;
@@ -421,6 +564,12 @@ function drawCenter() {
   ctx.lineWidth = Math.max(3, CS * 0.035);
   ctx.strokeText('$' + G.pot.toLocaleString(), cx, potCY);
   ctx.fillText('$' + G.pot.toLocaleString(), cx, potCY);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = `bold ${CS * 0.082}px 'Courier New',monospace`;
+  ctx.fillStyle = 'rgba(255,215,106,0.58)';
+  ctx.fillText('PROPERTY BANK', cx, potCY + CS * 0.35);
   ctx.restore();
 
   // ── 倍率與預估提領（lap ≥ 2，愈大愈搶眼）──────────────────
@@ -452,7 +601,7 @@ function drawCenter() {
       ctx.shadowColor = 'rgba(255,215,106,0.5)';
       ctx.shadowBlur  = 8;
       ctx.fillStyle   = 'rgba(255,232,142,0.78)';
-      ctx.fillText(`可領 $${est.toLocaleString()}`, cx, cy + CS * 0.48);
+      ctx.fillText(`可領 $${est.toLocaleString()}`, cx, cy + CS * 0.44);
       ctx.restore();
     }
 
@@ -460,7 +609,7 @@ function drawCenter() {
       const wPulse = 0.3 + 0.7 * Math.abs(Math.sin(now * 0.007));
       ctx.font      = `bold ${CS * 0.112}px Arial`;
       ctx.fillStyle = `rgba(255,63,100,${0.45 + wPulse * 0.45})`;
-      ctx.fillText('⚠ 高風險地帶 ⚠', cx, iy + ih - CS * 0.23);
+      ctx.fillText('⚠ 高風險地帶 ⚠', cx, iy + ih - CS * 0.20);
     }
 
   } else if (lap === 1 && G.canCashOut) {
@@ -471,8 +620,8 @@ function drawCenter() {
   } else if (G.pot === 0) {
     ctx.font      = `${CS * 0.098}px Arial`;
     ctx.fillStyle = 'rgba(215,233,245,0.38)';
-    ctx.fillText('落在獎勵格累積能量', cx, cy + CS * 0.16);
-    ctx.fillText('經過基地即可提領', cx, cy + CS * 0.34);
+    ctx.fillText('落在地產收租升級', cx, cy + CS * 0.16);
+    ctx.fillText('經過起點即可結算', cx, cy + CS * 0.34);
   }
 
   // ── 圈數 badge ───────────────────────────────────────────────
@@ -482,7 +631,7 @@ function drawCenter() {
     ctx.fillStyle = `rgba(${glow},0.86)`;
     ctx.shadowColor = col;
     ctx.shadowBlur  = 6 * badgePulse;
-    if (lap < 4) ctx.fillText(`第 ${lap} 圈`, cx, iy + ih - CS * 0.23);
+    if (lap < 4) ctx.fillText(`第 ${lap} 圈`, cx, iy + ih - CS * 0.20);
     ctx.shadowBlur = 0;
   }
 }
@@ -561,6 +710,27 @@ function drawToken() {
 }
 
 // ── 特效渲染 ──────────────────────────────────────────────────
+function drawSpotlight() {
+  if (!FX) return;
+  ctx.save();
+  const rgb = hexToRgb(FX.color);
+  const g = ctx.createRadialGradient(FX.x, FX.y, 0, FX.x, FX.y, FX.r);
+  g.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${FX.alpha * 0.42})`);
+  g.addColorStop(0.35, `rgba(${rgb.r},${rgb.g},${rgb.b},${FX.alpha * 0.18})`);
+  g.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, BS, BS);
+
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${FX.alpha * 0.75})`;
+  ctx.lineWidth = Math.max(2, CS * 0.025);
+  ctx.shadowColor = FX.color;
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.arc(FX.x, FX.y, FX.r * (0.18 + FX.alpha * 0.08), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawParticles() {
   PS.forEach(p => {
     ctx.globalAlpha = Math.max(0, p.alpha);
@@ -630,6 +800,175 @@ function pill(x, y, w, h, color, text) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, x + w / 2, y + h * 0.53);
+  ctx.restore();
+}
+
+function flashAt(x, y, color, r = CS * 1.1) {
+  FX = { x, y, color, r, alpha: 1, decay: 0.045 };
+}
+
+function isProperty(sp) {
+  return sp.type === 'prize' || sp.type === 'jackpot';
+}
+
+function propertyLevel(sp) {
+  return isProperty(sp) ? G.houseLevels[sp.id] || 0 : 0;
+}
+
+function propertyMultiplier(sp) {
+  if (!isProperty(sp)) return sp.mult || 0;
+  const level = propertyLevel(sp);
+  const step = sp.type === 'jackpot' ? 2 : 1;
+  return sp.mult + level * step;
+}
+
+function upgradeProperty(sp) {
+  if (!isProperty(sp)) return 0;
+  const next = Math.min(MAX_HOUSE_LEVEL, propertyLevel(sp) + 1);
+  G.houseLevels[sp.id] = next;
+  return next;
+}
+
+function houseLabel(level) {
+  if (level >= MAX_HOUSE_LEVEL) return '飯店';
+  if (level <= 0) return '空地';
+  return `${level} 棟房屋`;
+}
+
+function drawHouseLevel(x, y, w, h, sp, th) {
+  const level = propertyLevel(sp);
+  const bx = x + w * 0.50;
+  const by = y + h * 0.63;
+  const bw = w * (level >= MAX_HOUSE_LEVEL ? 0.58 : 0.50);
+  const bd = h * 0.20;
+  const bh = h * (0.26 + Math.max(1, level) * 0.072);
+  const active = level > 0;
+  const rgb = hexToRgb(th.edge);
+
+  ctx.save();
+  ctx.shadowColor = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)` : 'rgba(0,0,0,0.35)';
+  ctx.shadowBlur = active ? 10 : 4;
+
+  // ground pad
+  ctx.beginPath();
+  ctx.moveTo(bx - bw * 0.64, by + bd * 0.18);
+  ctx.lineTo(bx, by - bd * 0.50);
+  ctx.lineTo(bx + bw * 0.66, by + bd * 0.14);
+  ctx.lineTo(bx, by + bd * 0.80);
+  ctx.closePath();
+  ctx.fillStyle = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)` : 'rgba(255,255,255,0.08)';
+  ctx.fill();
+  ctx.strokeStyle = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.42)` : 'rgba(255,255,255,0.14)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  if (!active) {
+    ctx.font = `bold ${CS * 0.082}px 'Courier New',monospace`;
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.textAlign = 'center';
+    ctx.fillText('LOT', bx, by + bd * 0.18);
+    ctx.restore();
+    return;
+  }
+
+  const topY = by - bh;
+  const left = bx - bw * 0.44;
+  const right = bx + bw * 0.40;
+
+  // front face
+  const front = ctx.createLinearGradient(left, topY, left, by);
+  front.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.82)`);
+  front.addColorStop(1, `rgba(${Math.max(0, rgb.r - 45)},${Math.max(0, rgb.g - 45)},${Math.max(0, rgb.b - 45)},0.92)`);
+  ctx.beginPath();
+  ctx.moveTo(left, topY + bd * 0.52);
+  ctx.lineTo(right, topY + bd * 0.82);
+  ctx.lineTo(right, by);
+  ctx.lineTo(left, by - bd * 0.26);
+  ctx.closePath();
+  ctx.fillStyle = front;
+  ctx.fill();
+
+  // side face
+  ctx.beginPath();
+  ctx.moveTo(right, topY + bd * 0.82);
+  ctx.lineTo(bx + bw * 0.62, topY + bd * 0.34);
+  ctx.lineTo(bx + bw * 0.62, by - bd * 0.50);
+  ctx.lineTo(right, by);
+  ctx.closePath();
+  ctx.fillStyle = `rgba(${Math.max(0, rgb.r - 65)},${Math.max(0, rgb.g - 65)},${Math.max(0, rgb.b - 65)},0.86)`;
+  ctx.fill();
+
+  // roof/top face
+  ctx.beginPath();
+  ctx.moveTo(left, topY + bd * 0.52);
+  ctx.lineTo(bx - bw * 0.16, topY);
+  ctx.lineTo(bx + bw * 0.62, topY + bd * 0.34);
+  ctx.lineTo(right, topY + bd * 0.82);
+  ctx.closePath();
+  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? '#ffd76a' : 'rgba(255,255,255,0.72)';
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.58)`;
+  ctx.stroke();
+
+  // windows
+  const rows = Math.min(4, level);
+  const cols = level >= 4 ? 3 : 2;
+  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? 'rgba(33,18,0,0.72)' : 'rgba(2,8,18,0.58)';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const wx = left + bw * (0.19 + c * 0.23);
+      const wy = topY + bd * 0.96 + r * bh * 0.15;
+      ctx.fillRect(wx, wy, bw * 0.115, bh * 0.075);
+    }
+  }
+
+  if (level >= MAX_HOUSE_LEVEL) {
+    ctx.font = `bold ${CS * 0.078}px 'Courier New',monospace`;
+    ctx.fillStyle = '#ffd76a';
+    ctx.textAlign = 'center';
+    ctx.shadowBlur = 8;
+    ctx.fillText('HOTEL', bx + bw * 0.04, topY - bd * 0.16);
+  }
+
+  ctx.shadowBlur = 0;
+  ctx.font = `bold ${CS * 0.082}px 'Courier New',monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  ctx.textAlign = 'center';
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 2;
+  ctx.strokeText(`L${level}`, bx, by + bd * 1.26);
+  ctx.fillText(`L${level}`, bx, by + bd * 1.26);
+  ctx.restore();
+}
+
+function drawHazardStripes(x, y, w, h, th, pulse) {
+  ctx.save();
+  rrPath(x, y, w, h, 11);
+  ctx.clip();
+  ctx.translate(x + w * 0.12, y + h * 0.09);
+  ctx.rotate(-0.62);
+  for (let i = -4; i < 8; i++) {
+    ctx.fillStyle = i % 2 === 0
+      ? `rgba(${th.glow},${0.10 + pulse * 0.05})`
+      : 'rgba(0,0,0,0)';
+    ctx.fillRect(i * w * 0.22, 0, w * 0.09, h * 1.28);
+  }
+  ctx.restore();
+}
+
+function drawWarpMark(cx, cy, r, th, now) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(now * 0.0016);
+  ctx.strokeStyle = `rgba(${th.glow},0.40)`;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 5]);
+  for (let i = 0; i < 2; i++) {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * (1.05 + i * 0.18), r * (0.40 + i * 0.10), i * 0.7, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
   ctx.restore();
 }
 
@@ -706,7 +1045,7 @@ function adjustBet(dir) {
 async function onRoll() {
   if (G.animating) return;
   const bet = BET_LEVELS[G.betIdx];
-  if (G.balance < bet) { setStatus('🛑 星幣不足，請降低下注'); return; }
+  if (G.balance < bet) { setStatus('🛑 星幣不足，請降低投資額'); return; }
 
   AUDIO.init();
   G.animating = true;
@@ -720,6 +1059,7 @@ async function onRoll() {
 
   document.getElementById('dice-wrap').classList.remove('invisible');
   AUDIO.dice();
+  flashAt(BS / 2, BS / 2, '#ffd76a', CS * 1.6);
   setStatus('🎲 骰子滾動中...');
 
   await animateDiceRoll(d1, d2);
@@ -854,42 +1194,63 @@ function resolveSpace(passedStart) {
   if (sp.type === 'start') {
     G.laps++;
     passedStart = true;
+    flashAt(tx, ty, '#ffd76a', CS * 1.25);
     burst(tx, ty, 20, ['#ffd600','#fff','#00ff88'], 2.5, 0.022, 0.06);
     msg = '🛸 回到星際基地！';
 
-  } else if (sp.type === 'prize' || sp.type === 'jackpot') {
-    const earn = bet * sp.mult;
+  } else if (isProperty(sp)) {
+    const beforeLevel = propertyLevel(sp);
+    const rentMult = propertyMultiplier(sp);
+    const earn = bet * rentMult;
+    const newLevel = upgradeProperty(sp);
+    const levelMsg = newLevel > beforeLevel ? `升級到 ${houseLabel(newLevel)}` : `${houseLabel(newLevel)}滿級`;
     G.pot += earn;
     updateHUD();
 
     if (sp.type === 'jackpot') {
       AUDIO.jackpot();
+      flashAt(tx, ty, '#ff9f2f', CS * 1.75);
       burst(tx, ty, 100, ['#ff6d00','#ffd600','#ff1744','#fff','#ffaa00'], 6, 0.007, 0.05);
       burst(tx, ty,  50, ['#00ff88','#00c8ff','#aa00ff'],                  8, 0.005, 0.04);
       coinShower(60);
-      showBig('💥 JACKPOT!', '#ff6d00', 2500);
-      setStatus(`💥 宇宙爆炸！×${sp.mult} → 能量池 +$${earn}`);
+      showBig('🏰 LANDMARK!', '#ff9f2f', 2500);
+      setStatus(`🏰 ${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
     } else {
-      AUDIO.prize(sp.mult);
+      AUDIO.prize(Math.min(rentMult, 5));
+      flashAt(tx, ty, '#3cffb0', CS * 1.15);
       burst(tx, ty, 32, ['#00ff88','#ffd600','#00c8ff','#aaffcc'], 3.5, 0.018, 0.08);
-      setStatus(`${sp.icon} ${sp.name} ×${sp.mult} → 能量池 +$${earn}`);
+      setStatus(`${sp.icon} ${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
     }
     addFloat(tx, ty - CS * 0.32, `+$${earn}`,
-      sp.type === 'jackpot' ? '#ff6d00' : '#00ff88');
+      sp.type === 'jackpot' ? '#ff9f2f' : '#00ff88');
+    if (newLevel > beforeLevel) addFloat(tx, ty + CS * 0.08, `🏠 Lv.${newLevel}`, '#ffd76a');
     msg = '';
 
   } else if (sp.type === 'danger') {
-    const lose = bet * sp.pen;
-    G.balance  = Math.max(0, G.balance - lose);
+    const actualLose = sp.wipePot ? G.pot : Math.min(G.pot, bet * sp.pen);
+    if (sp.wipePot) {
+      G.pot = 0;
+      G.houseLevels.fill(0);
+      G.position = 0;
+      G.laps = 0;
+      G.canCashOut = false;
+      hideCashBtn();
+    } else {
+      G.pot = Math.max(0, G.pot - bet * sp.pen);
+    }
     updateHUD();
     AUDIO.danger(sp.pen);
-    burst(tx, ty, 35, ['#ff1744','#ff5252','#aa0020'], 3, 0.018, 0.07);
-    addFloat(tx, ty - CS * 0.32, `-$${lose}`, '#ff4060');
+    flashAt(tx, ty, sp.wipePot ? '#ff1744' : '#ff3f64', sp.wipePot ? CS * 1.85 : CS * 1.35);
+    burst(tx, ty, sp.wipePot ? 70 : 35, ['#ff1744','#ff5252','#aa0020'], sp.wipePot ? 5 : 3, 0.018, 0.07);
+    addFloat(tx, ty - CS * 0.32, `-$${actualLose}`, '#ff4060');
     screenShake();
-    msg = `${sp.icon} ${sp.name}！損失 $${lose}`;
+    msg = sp.wipePot
+      ? `${sp.icon} ${sp.name}！租金池歸零，房屋重置，回到起點`
+      : `${sp.icon} ${sp.name}！租金池 -$${actualLose}`;
 
   } else if (sp.type === 'random') {
     AUDIO.random();
+    flashAt(tx, ty, '#b985ff', CS * 1.25);
     const RMULTS = [0, 0, 1, 2, 3, 5];
     const rm = RMULTS[Math.floor(Math.random() * RMULTS.length)];
     if (rm > 0) {
@@ -898,10 +1259,10 @@ function resolveSpace(passedStart) {
       updateHUD();
       burst(tx, ty, 40, ['#ce93d8','#aa00ff','#00c8ff','#ffd600'], 4, 0.016, 0.07);
       addFloat(tx, ty - CS * 0.32, `+$${earn}`, '#ce93d8');
-      msg = `🌀 異次元：×${rm}！能量池 +$${earn}`;
+      msg = `🎴 命運卡：租金加成 ×${rm}！租金池 +$${earn}`;
     } else {
       burst(tx, ty, 18, ['#5c0080','#9900bb'], 1.8, 0.025, 0.05);
-      msg = '🌀 異次元：空間扭曲，無獎勵...';
+      msg = '🎴 命運卡：空白卡，這回合沒有收入...';
     }
   }
 
@@ -942,14 +1303,16 @@ function onCashOut() {
   AUDIO.cashOut();
   coinShower(100);
   const [tx, ty] = tokenXY();
+  flashAt(tx, ty, '#3cffb0', CS * 1.55);
   burst(tx, ty, 60, ['#00ff88','#ffd600','#00c8ff','#aaffdd'], 5, 0.008, 0.05);
   showBig(`+$${cashVal.toLocaleString()}`, '#00ff88', 2200);
 
   const potWas = G.pot;
   G.pot = 0; G.laps = 0; G.canCashOut = false;
+  G.houseLevels.fill(0);
   hideCashBtn();
 
-  setStatus(`✅ 傳送成功！$${potWas.toLocaleString()}${mult > 1 ? ' ×' + mult.toFixed(1) : ''} → $${cashVal.toLocaleString()} 入帳`);
+  setStatus(`✅ 租金結算！$${potWas.toLocaleString()}${mult > 1 ? ' ×' + mult.toFixed(1) : ''} → $${cashVal.toLocaleString()} 入帳，房屋已重置`);
   updateHUD();
 }
 
@@ -964,13 +1327,14 @@ function restart() {
   Object.assign(G, {
     balance:1000, pot:0, betIdx:2, position:0,
     laps:0, canCashOut:false, animating:false, totalWon:0,
+    houseLevels:Array(16).fill(0),
   });
-  PS.length = 0; FT.length = 0; BT = null;
+  PS.length = 0; FT.length = 0; BT = null; FX = null;
   document.getElementById('overlay').classList.add('hidden');
   document.getElementById('roll-btn').disabled = false;
   document.getElementById('dice-wrap').classList.add('invisible');
   hideCashBtn();
-  setStatus('準備好了嗎？按下發射！');
+  setStatus('準備好了嗎？擲骰收租！');
   updateHUD();
 }
 
@@ -994,8 +1358,8 @@ function showCashBtn() {
   const cashVal = Math.floor(G.pot * mult);
   document.getElementById('cash-btn').textContent =
     mult > 1
-      ? `🛸 傳送入帳 $${cashVal.toLocaleString()} (×${mult.toFixed(1)})`
-      : `🛸 傳送入帳 $${cashVal.toLocaleString()}`;
+      ? `💰 結算租金 $${cashVal.toLocaleString()} (×${mult.toFixed(1)})`
+      : `💰 結算租金 $${cashVal.toLocaleString()}`;
   document.getElementById('cash-btn').classList.remove('hidden');
 }
 

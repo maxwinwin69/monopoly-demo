@@ -3,35 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>星際賭場</title>
+<title>星際大富翁</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
-
   <div id="header">
     <div class="hstat">
       <span class="hlab">星幣</span>
       <span id="balance-val">$1,000</span>
     </div>
-    <div id="logo">👾 星際賭場</div>
+    <div id="logo">
+      <span class="logo-mark">👾</span>
+      <span class="logo-title">星際大富翁</span>
+      <span class="logo-sub">GALAXY TYCOON</span>
+    </div>
     <div class="hstat right">
-      <span class="hlab">宇宙能量</span>
+      <span class="hlab">租金池</span>
       <span id="pot-val" class="alien">$0</span>
     </div>
   </div>
 
   <div id="board-wrap">
+    <div class="cabinet-screw tl" aria-hidden="true"></div>
+    <div class="cabinet-screw tr" aria-hidden="true"></div>
+    <div class="cabinet-screw bl" aria-hidden="true"></div>
+    <div class="cabinet-screw br" aria-hidden="true"></div>
     <canvas id="board"></canvas>
   </div>
 
   <div id="controls">
-    <div id="status-bar">準備好了嗎？按下發射！</div>
+    <div id="status-bar">準備好了嗎？擲骰收租！</div>
 
     <div id="bet-row">
       <button id="bet-dn" class="bet-btn">−</button>
       <div id="bet-box">
-        <span class="hlab">下注星幣</span>
+        <span class="hlab">投資星幣</span>
         <span id="bet-val">$50</span>
       </div>
       <button id="bet-up" class="bet-btn">+</button>
@@ -39,7 +46,7 @@
 
     <div id="action-row">
       <button id="roll-btn">🚀&nbsp;發射</button>
-      <button id="cash-btn" class="hidden">🛸&nbsp;傳送入帳</button>
+      <button id="cash-btn" class="hidden">💰&nbsp;結算租金</button>
     </div>
 
     <div id="dice-wrap" class="invisible">
