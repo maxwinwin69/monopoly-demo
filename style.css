@@ -131,18 +131,6 @@ body::before{
 }
 #over-restart:active{transform:scale(.95)}
 
-/* ── Audio controls ── */
-#header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-#audio-btns{display:flex;gap:5px}
-.aud-btn{
-  padding:2px 8px;background:rgba(0,255,136,.08);
-  border:1px solid rgba(0,255,136,.22);border-radius:7px;
-  font-size:13px;cursor:pointer;color:#fff;line-height:1.6;
-  transition:.12s;
-}
-.aud-btn:active{transform:scale(.85)}
-.aud-btn.off{opacity:.25;filter:grayscale(.9)}
-
 /* ── Screen shake ── */
 @keyframes shake{
   0%,100%{transform:translate(0,0) rotate(0deg)}

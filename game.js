@@ -70,16 +70,6 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cash-btn').addEventListener('click', onCashOut);
   document.getElementById('over-restart').addEventListener('click', restart);
 
-  document.getElementById('bgm-btn').addEventListener('click', () => {
-    AUDIO.init();
-    const on = AUDIO.toggleBGM();
-    document.getElementById('bgm-btn').classList.toggle('off', !on);
-  });
-  document.getElementById('sfx-btn').addEventListener('click', () => {
-    AUDIO.init();
-    const on = AUDIO.toggleSFX();
-    document.getElementById('sfx-btn').classList.toggle('off', !on);
-  });
 
   updateHUD();
   requestAnimationFrame(loop);
@@ -97,6 +87,19 @@ function loop(ts) {
   requestAnimationFrame(loop);
   if (ts - lastDraw < 27) return;
   lastDraw = ts;
+
+  // 圈數越高，中央面板自動噴出環境火花
+  if (G.laps >= 2 && Math.random() < 0.12 + G.laps * 0.06) {
+    const lc = lapColor(G.laps);
+    PS.push({
+      x: CS + CS * 0.3 + Math.random() * CS * 2.4,
+      y: CS + CS * 0.3 + Math.random() * CS * 2.4,
+      vx: (Math.random() - 0.5) * 0.9,
+      vy: -0.4 - Math.random() * 1.8,
+      r:  0.6 + Math.random() * 1.4,
+      color: lc, alpha: 0.75, decay: 0.022, grav: 0,
+    });
+  }
 
   // 更新粒子
   for (let i = PS.length - 1; i >= 0; i--) {
@@ -228,99 +231,164 @@ function drawCell(sp) {
 
 // ── 繪製中央面板 ──────────────────────────────────────────────
 function drawCenter() {
-  const pd = 3;
-  const ix = CS + pd, iy = CS + pd;
-  const iw = CS * 3 - pd * 2, ih = CS * 3 - pd * 2;
-  const cx = ix + iw / 2, cy = iy + ih / 2;
+  const pd  = 3;
+  const ix  = CS + pd, iy = CS + pd;
+  const iw  = CS * 3 - pd * 2, ih = CS * 3 - pd * 2;
+  const cx  = ix + iw / 2, cy = iy + ih / 2;
   const now = Date.now();
+  const lap = G.laps;
+  const col = lapColor(lap);
 
+  // ── 背景：依圈數改變星雲色調 ────────────────────────────────
   ctx.save();
   rrPath(ix, iy, iw, ih, 12);
   ctx.clip();
 
-  // 星雲漸層
-  const nebula = ctx.createRadialGradient(cx, cy - ih*0.1, 0, cx, cy, iw * 0.85);
-  nebula.addColorStop(0,   '#0c0030');
-  nebula.addColorStop(0.5, '#030418');
-  nebula.addColorStop(1,   '#010210');
+  const tint = lap === 0 ? '12,0,48'
+             : lap === 1 ? '10,0,40'
+             : lap === 2 ? '20,16,0'
+             : lap === 3 ? '28,20,0'
+             : lap === 4 ? '30,10,0'
+             : '30,0,0';
+  const nebula = ctx.createRadialGradient(cx, cy - ih*0.05, 0, cx, cy, iw * 0.9);
+  nebula.addColorStop(0,   `rgb(${tint})`);
+  nebula.addColorStop(0.5, '#02030e');
+  nebula.addColorStop(1,   '#000108');
   ctx.fillStyle = nebula;
   ctx.fillRect(ix, iy, iw, ih);
 
-  // 動態星空
+  // 星空
   const ts = now * 0.001;
   STARS.forEach(s => {
     const sx = ix + s.fx * iw, sy = iy + s.fy * ih;
-    const twinkle = 0.15 + 0.85 * Math.abs(Math.sin(ts * s.sp + s.ph));
+    const tw = 0.1 + 0.9 * Math.abs(Math.sin(ts * s.sp + s.ph));
     ctx.beginPath();
     ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(190,225,255,${twinkle})`;
+    ctx.fillStyle = `rgba(190,225,255,${tw * (0.5 + lap * 0.08)})`;
     ctx.fill();
   });
 
   // 掃描線
   ctx.globalAlpha = 0.04;
-  for (let y = iy; y < iy + ih; y += 3) {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(ix, y, iw, 1);
-  }
+  for (let y = iy; y < iy + ih; y += 3) { ctx.fillStyle='#000'; ctx.fillRect(ix,y,iw,1); }
   ctx.globalAlpha = 1;
-
   ctx.restore();
 
-  // 邊框
-  ctx.strokeStyle = 'rgba(0,255,136,0.13)';
-  ctx.lineWidth   = 1;
+  // ── 邊框：圈數越高越亮 ──────────────────────────────────────
+  const borderPulse = 0.4 + 0.6 * Math.sin(now * (0.002 + lap * 0.001));
+  ctx.strokeStyle = lap === 0 ? 'rgba(0,255,136,0.13)' : col;
+  ctx.lineWidth   = lap === 0 ? 1 : 1 + lap * 0.4;
+  ctx.shadowColor = col;
+  ctx.shadowBlur  = lap * 6 * borderPulse;
   rrStroke(ix, iy, iw, ih, 12);
+  ctx.shadowBlur  = 0;
 
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
-  // 標題
-  ctx.font      = `${CS * 0.115}px 'Courier New',monospace`;
-  ctx.fillStyle = 'rgba(0,255,136,0.38)';
-  ctx.fillText('◈ 宇宙能量池 ◈', cx, iy + CS * 0.28);
+  // ── 旋轉能量環（圈數 ≥ 1 出現）────────────────────────────
+  if (lap >= 1) {
+    const rings = Math.min(lap, 3);
+    for (let r = 0; r < rings; r++) {
+      const rSpeed  = (0.0008 + lap * 0.0004) * (r % 2 === 0 ? 1 : -1);
+      const rRadius = CS * (0.78 + r * 0.14);
+      const rPulse  = 0.5 + 0.5 * Math.sin(now * 0.004 + r * 1.2);
+      ctx.save();
+      ctx.translate(cx, cy - CS * 0.12);
+      ctx.rotate(now * rSpeed);
+      ctx.strokeStyle = col;
+      ctx.lineWidth   = 1.2 + r * 0.4;
+      ctx.globalAlpha = (0.2 + rPulse * 0.35) * (1 - r * 0.18);
+      ctx.setLineDash([6 - r, 8 + r * 2]);
+      ctx.shadowColor = col;
+      ctx.shadowBlur  = 8 * rPulse;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rRadius, rRadius * 0.45, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  }
 
-  // 獎池金額（發光）
-  const pfs = G.pot >= 10000 ? CS * 0.27 : G.pot >= 1000 ? CS * 0.31 : CS * 0.35;
+  // ── 標題 ────────────────────────────────────────────────────
+  ctx.font      = `${CS * 0.112}px 'Courier New',monospace`;
+  ctx.fillStyle = lap === 0 ? 'rgba(0,255,136,0.35)' : col.replace(')', ',0.55)').replace('rgb', 'rgba');
+  ctx.fillText('◈ 宇宙能量池 ◈', cx, iy + CS * 0.26);
+
+  // ── 獎池金額（每圈放大）────────────────────────────────────
+  const potCY   = cy - CS * (0.16 + lap * 0.02);  // 隨圈數上移
+  const baseFS  = G.pot >= 100000 ? CS * 0.24
+                : G.pot >= 10000  ? CS * 0.28
+                : G.pot >= 1000   ? CS * 0.32 : CS * 0.36;
+  const lapFS   = baseFS * (1 + lap * 0.075);      // 每圈 +7.5%
+  const glowAmt = 16 + lap * 10;
+  const potPulse = 0.45 + 0.55 * Math.sin(now * (0.003 + lap * 0.0015));
+
   ctx.save();
-  ctx.font        = `bold ${pfs}px 'Courier New',monospace`;
-  ctx.shadowColor = G.pot > 0 ? 'rgba(0,255,136,0.7)' : 'transparent';
-  ctx.shadowBlur  = 18;
-  ctx.fillStyle   = G.pot > 0 ? '#00ff88' : 'rgba(255,255,255,0.14)';
-  ctx.fillText('$' + G.pot.toLocaleString(), cx, cy - CS * 0.20);
+  ctx.font        = `bold ${lapFS}px 'Courier New',monospace`;
+  ctx.shadowColor = G.pot > 0 ? col : 'transparent';
+  ctx.shadowBlur  = glowAmt * potPulse;
+  ctx.fillStyle   = G.pot > 0 ? col : 'rgba(255,255,255,0.14)';
+  ctx.fillText('$' + G.pot.toLocaleString(), cx, potCY);
   ctx.restore();
 
-  // 倍率顯示
+  // ── 倍率與預估提領（lap ≥ 2，愈大愈搶眼）──────────────────
   const mult = cashMult();
-  if (G.laps >= 2) {
-    const pulse = 0.6 + 0.4 * Math.sin(now * 0.0035);
+  if (lap >= 2) {
+    const mPulse = 0.6 + 0.4 * Math.sin(now * (0.003 + lap * 0.001));
+    const mFS    = CS * (0.14 + lap * 0.012);
+
+    // 倍率標籤
     ctx.save();
-    ctx.font        = `bold ${CS * 0.155}px Arial`;
-    ctx.shadowColor = `rgba(255,214,0,${pulse})`;
-    ctx.shadowBlur  = 12;
-    ctx.fillStyle   = `rgba(255,214,0,${0.7 + pulse * 0.3})`;
-    ctx.fillText(`提領倍率 ×${mult.toFixed(1)}`, cx, cy + CS * 0.17);
+    ctx.font        = `bold ${mFS}px Arial`;
+    ctx.shadowColor = `rgba(255,214,0,${mPulse})`;
+    ctx.shadowBlur  = 10 + lap * 3;
+    ctx.fillStyle   = `rgba(255,214,0,${0.65 + mPulse * 0.35})`;
+    ctx.fillText(`× ${mult.toFixed(1)}  提領倍率`, cx, cy + CS * 0.16);
     ctx.restore();
+
+    // 預估金額（大且清晰）
     if (G.pot > 0) {
-      ctx.font      = `${CS * 0.112}px monospace`;
-      ctx.fillStyle = 'rgba(255,214,0,0.48)';
-      ctx.fillText(`≈ $${Math.floor(G.pot * mult).toLocaleString()}`, cx, cy + CS * 0.38);
+      const est = Math.floor(G.pot * mult);
+      const eFS = CS * (0.155 + lap * 0.008);
+      ctx.save();
+      ctx.font        = `bold ${eFS}px 'Courier New',monospace`;
+      ctx.shadowColor = 'rgba(255,214,0,0.5)';
+      ctx.shadowBlur  = 8;
+      ctx.fillStyle   = 'rgba(255,214,0,0.70)';
+      ctx.fillText(`$${est.toLocaleString()}`, cx, cy + CS * 0.36);
+      ctx.restore();
     }
-  } else if (G.laps === 1 && G.canCashOut) {
-    ctx.font      = `${CS * 0.108}px Arial`;
+
+    // 危險警示（lap ≥ 4）
+    if (lap >= 4) {
+      const wPulse = 0.3 + 0.7 * Math.abs(Math.sin(now * 0.007));
+      ctx.font      = `bold ${CS * 0.13}px Arial`;
+      ctx.fillStyle = `rgba(255,23,68,${wPulse})`;
+      ctx.fillText('⚠ 高風險地帶 ⚠', cx, cy + CS * 0.56);
+    }
+
+  } else if (lap === 1 && G.canCashOut) {
+    ctx.font      = `${CS * 0.106}px Arial`;
     ctx.fillStyle = 'rgba(180,200,255,0.42)';
-    ctx.fillText('再繞一圈可獲 ×1.5 加成！', cx, cy + CS * 0.24);
+    ctx.fillText('再繞一圈獲 ×1.5 加成！', cx, cy + CS * 0.25);
+
   } else if (G.pot === 0) {
-    ctx.font      = `${CS * 0.105}px Arial`;
-    ctx.fillStyle = 'rgba(168,204,224,0.28)';
+    ctx.font      = `${CS * 0.102}px Arial`;
+    ctx.fillStyle = 'rgba(168,204,224,0.26)';
     ctx.fillText('落在房子贏取獎金', cx, cy + CS * 0.08);
     ctx.fillText('經過出發點可提領', cx, cy + CS * 0.28);
   }
 
-  // 圈數
-  if (G.laps > 0) {
-    ctx.font      = `${CS * 0.108}px 'Courier New',monospace`;
-    ctx.fillStyle = 'rgba(0,255,136,0.35)';
-    ctx.fillText(`✦ 第 ${G.laps} 圈 ✦`, cx, iy + ih - CS * 0.26);
+  // ── 圈數 badge ───────────────────────────────────────────────
+  if (lap > 0) {
+    const badgePulse = 0.5 + 0.5 * Math.sin(now * (0.002 + lap * 0.001));
+    ctx.font      = `bold ${CS * (0.108 + lap * 0.006)}px 'Courier New',monospace`;
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur  = 6 * badgePulse;
+    ctx.fillText(`✦ 第 ${lap} 圈 ✦`, cx, iy + ih - CS * 0.25);
+    ctx.shadowBlur = 0;
   }
 }
 
@@ -439,6 +507,12 @@ function drawBigText() {
   ctx.fillStyle   = BT.color;
   ctx.fillText(BT.text, BS / 2, BS / 2);
   ctx.restore();
+}
+
+// ── 圈數顏色 ──────────────────────────────────────────────────
+function lapColor(laps) {
+  const COLORS = ['#00ff88','#00ff88','#aaff00','#ffd600','#ff8c00','#ff1744'];
+  return COLORS[Math.min(laps, COLORS.length - 1)];
 }
 
 // ── 工具函數 ──────────────────────────────────────────────────
