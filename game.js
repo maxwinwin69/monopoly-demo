@@ -8,22 +8,22 @@ const BET_LEVELS = [10, 25, 50, 100, 200, 500];
 const MAX_HOUSE_LEVEL = 5;
 
 const SPACES = [
-  { id:0,  name:'起點基地', type:'start',   icon:'✦', bg:'#1e0e00', bdr:'#ffd600' },
-  { id:1,  name:'隕石小屋', type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
-  { id:2,  name:'水晶公寓', type:'prize',   icon:'◆', mult:3, bg:'#000e28' },
-  { id:3,  name:'命運卡',   type:'random',  icon:'◈', bg:'#140030' },
-  { id:4,  name:'太空稅',   type:'danger',  icon:'✕', pen:1,  bg:'#1e0000' },
-  { id:5,  name:'外星商圈', type:'prize',   icon:'◆', mult:2, bg:'#001e0e' },
-  { id:6,  name:'超新星飯店', type:'prize', icon:'◆', mult:5, bg:'#1e1000' },
-  { id:7,  name:'維修費',   type:'danger',  icon:'✕', pen:2,  bg:'#1e0000' },
-  { id:8,  name:'暗物質豪宅', type:'prize', icon:'◆', mult:3, bg:'#0a0022' },
-  { id:9,  name:'軌道別墅', type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
-  { id:10, name:'銀河地標', type:'jackpot', icon:'★', mult:12, bg:'#200010', bdr:'#ff6d00' },
-  { id:11, name:'命運卡',   type:'random',  icon:'◈', bg:'#140030' },
-  { id:12, name:'歸零危機', type:'danger',  icon:'⊗', pen:1, wipePot:true, bg:'#1e0000' },
-  { id:13, name:'文明古城', type:'prize',   icon:'◆', mult:3, bg:'#001e0e' },
-  { id:14, name:'火箭車站', type:'prize',   icon:'◆', mult:4, bg:'#1e1000' },
-  { id:15, name:'月球民宿', type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
+  { id:0,  name:'GO BASE',     type:'start',   icon:'✦', bg:'#1e0e00', bdr:'#ffd600' },
+  { id:1,  name:'Meteor',      type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
+  { id:2,  name:'Crystal Apt', type:'prize',   icon:'◆', mult:3, bg:'#000e28' },
+  { id:3,  name:'Fate Card',   type:'random',  icon:'◈', bg:'#140030' },
+  { id:4,  name:'Space Tax',   type:'danger',  icon:'✕', pen:1,  bg:'#1e0000' },
+  { id:5,  name:'Alien Mall',  type:'prize',   icon:'◆', mult:2, bg:'#001e0e' },
+  { id:6,  name:'Supernova',   type:'prize',   icon:'◆', mult:5, bg:'#1e1000' },
+  { id:7,  name:'Repair Fee',  type:'danger',  icon:'✕', pen:2,  bg:'#1e0000' },
+  { id:8,  name:'Dark Matter', type:'prize',   icon:'◆', mult:3, bg:'#0a0022' },
+  { id:9,  name:'Orbit Villa', type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
+  { id:10, name:'NEXUS',       type:'jackpot', icon:'★', mult:12, bg:'#200010', bdr:'#ff6d00' },
+  { id:11, name:'Fate Card',   type:'random',  icon:'◈', bg:'#140030' },
+  { id:12, name:'Zero Crisis', type:'danger',  icon:'⊗', pen:1, wipePot:true, bg:'#1e0000' },
+  { id:13, name:'Ancient City',type:'prize',   icon:'◆', mult:3, bg:'#001e0e' },
+  { id:14, name:'Rocket Hub',  type:'prize',   icon:'◆', mult:4, bg:'#1e1000' },
+  { id:15, name:'Moon Lodge',  type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
 ];
 
 const SPACE_THEME = {
@@ -408,10 +408,19 @@ function drawCell(sp) {
     ctx.restore();
   }
 
-  // 名稱
-  ctx.font = `bold ${CS * 0.094}px Arial`;
-  ctx.fillStyle = 'rgba(236,246,255,.78)';
-  ctx.fillText(sp.name, cx, y + CS * (isProperty(sp) ? 0.62 : 0.70));
+  // 名稱：地產格不顯示，銀河地標改用英文標誌名，其餘非地產格保留
+  if (sp.type === 'jackpot') {
+    ctx.font = `900 ${CS * 0.088}px Impact,'Arial Black',sans-serif`;
+    ctx.fillStyle = `rgba(${th.glow},0.92)`;
+    ctx.shadowColor = th.edge;
+    ctx.shadowBlur = 8;
+    ctx.fillText('NEXUS', cx, y + CS * 0.62);
+    ctx.shadowBlur = 0;
+  } else if (!isProperty(sp)) {
+    ctx.font = `bold ${CS * 0.094}px Arial`;
+    ctx.fillStyle = 'rgba(236,246,255,.78)';
+    ctx.fillText(sp.name, cx, y + CS * 0.70);
+  }
 
   // 倍率標籤
   ctx.font = `bold ${CS * 0.116}px Arial`;
@@ -669,7 +678,7 @@ function drawCenter() {
     rrStroke(plateX, plateY, plateW, plateH, 10);
     ctx.font = `bold ${CS * (0.135 + Math.min(lap, 5) * 0.007)}px Arial`;
     ctx.fillStyle = `rgba(255,215,106,${0.76 + mPulse * 0.24})`;
-    ctx.fillText(`×${mult.toFixed(1)} 提領倍率`, cx, plateY + plateH * 0.51);
+    ctx.fillText(`×${mult.toFixed(1)} MULTIPLIER`, cx, plateY + plateH * 0.51);
     ctx.restore();
 
     if (G.pot > 0) {
@@ -680,7 +689,7 @@ function drawCenter() {
       ctx.shadowColor = 'rgba(255,215,106,0.5)';
       ctx.shadowBlur  = 8;
       ctx.fillStyle   = 'rgba(255,232,142,0.78)';
-      ctx.fillText(`可領 $${est.toLocaleString()}`, cx, cy + CS * 0.44);
+      ctx.fillText(`CLAIM $${est.toLocaleString()}`, cx, cy + CS * 0.44);
       ctx.restore();
     }
 
@@ -688,19 +697,19 @@ function drawCenter() {
       const wPulse = 0.3 + 0.7 * Math.abs(Math.sin(now * 0.007));
       ctx.font      = `bold ${CS * 0.112}px Arial`;
       ctx.fillStyle = `rgba(255,63,100,${0.45 + wPulse * 0.45})`;
-      ctx.fillText('⚠ 高風險地帶 ⚠', cx, iy + ih - CS * 0.20);
+      ctx.fillText('⚠  HIGH RISK  ⚠', cx, iy + ih - CS * 0.20);
     }
 
   } else if (lap === 1 && G.canCashOut) {
     ctx.font      = `bold ${CS * 0.106}px Arial`;
     ctx.fillStyle = 'rgba(215,233,245,0.52)';
-    ctx.fillText('再繞一圈獲 ×1.5 加成', cx, cy + CS * 0.28);
+    ctx.fillText('+1 lap for ×1.5 bonus', cx, cy + CS * 0.28);
 
   } else if (G.pot === 0) {
     ctx.font      = `${CS * 0.098}px Arial`;
     ctx.fillStyle = 'rgba(215,233,245,0.38)';
-    ctx.fillText('落在地產收租升級', cx, cy + CS * 0.16);
-    ctx.fillText('經過起點即可結算', cx, cy + CS * 0.34);
+    ctx.fillText('Land on properties to earn rent', cx, cy + CS * 0.16);
+    ctx.fillText('Pass GO to cash out', cx, cy + CS * 0.34);
   }
 
   // ── 圈數 badge ───────────────────────────────────────────────
@@ -710,7 +719,7 @@ function drawCenter() {
     ctx.fillStyle = `rgba(${glow},0.86)`;
     ctx.shadowColor = col;
     ctx.shadowBlur  = 6 * badgePulse;
-    if (lap < 4) ctx.fillText(`第 ${lap} 圈`, cx, iy + ih - CS * 0.20);
+    if (lap < 4) ctx.fillText(`LAP ${lap}`, cx, iy + ih - CS * 0.20);
     ctx.shadowBlur = 0;
   }
 }
@@ -909,9 +918,9 @@ function upgradeProperty(sp) {
 }
 
 function houseLabel(level) {
-  if (level >= MAX_HOUSE_LEVEL) return '飯店';
-  if (level <= 0) return '空地';
-  return `${level} 棟房屋`;
+  if (level >= MAX_HOUSE_LEVEL) return 'Hotel';
+  if (level <= 0) return 'Empty';
+  return `Lv.${level}`;
 }
 
 function drawMultiplierBadge(cx, cy, mult, th) {
@@ -1227,7 +1236,7 @@ function adjustBet(dir) {
 async function onRoll() {
   if (G.animating) return;
   const bet = BET_LEVELS[G.betIdx];
-  if (G.balance < bet) { setStatus('× 星幣不足，請降低投資額'); return; }
+  if (G.balance < bet) { setStatus('× Insufficient credits — lower your bet'); return; }
 
   AUDIO.init();
   G.animating = true;
@@ -1242,10 +1251,10 @@ async function onRoll() {
   document.getElementById('dice-wrap').classList.remove('invisible');
   AUDIO.dice();
   flashAt(BS / 2, BS / 2, '#ffd76a', CS * 1.6);
-  setStatus('骰子滾動中...');
+  setStatus('Rolling...');
 
   await animateDiceRoll(d1, d2);
-  setStatus(`${d1} + ${d2} = ${total}，移動 ${total} 格`);
+  setStatus(`${d1} + ${d2} = ${total} — move ${total} spaces`);
   animateMove(total);
 }
 
@@ -1342,11 +1351,11 @@ function setFortuneCardFace(card, mult) {
   card.classList.toggle('reward', isReward);
   card.classList.toggle('blank', !isReward);
   card.querySelector('.card-art').textContent = isReward ? '◆' : '○';
-  card.querySelector('.card-title').textContent = isReward ? '租金契約' : '星塵空卡';
-  card.querySelector('.card-result').textContent = isReward ? `獎池 + 投資 ×${mult}` : '沒有收益';
+  card.querySelector('.card-title').textContent = isReward ? 'RENT CONTRACT' : 'VOID CARD';
+  card.querySelector('.card-result').textContent = isReward ? `Vault + bet ×${mult}` : 'No reward';
   card.querySelector('.card-desc').textContent = isReward
-    ? `立即把本回合投資的 ${mult} 倍加入租金池。`
-    : '本張命運卡不增加獎池，繼續前進等待下一次機會。';
+    ? `Add ${mult}× your bet to the vault immediately.`
+    : 'No vault bonus this turn. Keep moving.';
 }
 
 function animateFortuneCard() {
@@ -1364,7 +1373,7 @@ function animateFortuneCard() {
   stage.classList.remove('hidden');
   void cards[0].offsetWidth;
   cards.forEach(card => card.classList.add('draw'));
-  setStatus('三選一，點選命運卡');
+  setStatus('Pick a card — choose wisely');
 
   return new Promise(resolve => {
     const reveal = ev => {
@@ -1376,13 +1385,13 @@ function animateFortuneCard() {
       });
       AUDIO.random();
       chosen.classList.add('chosen', 'flip', 'revealed');
-      setStatus('命運卡翻開了');
+      setStatus('Card revealed!');
 
       setTimeout(() => {
         cards.forEach((card, i) => {
           if (i !== chosenIdx) card.classList.add('peek', 'revealed');
         });
-        setStatus('其他命運卡揭曉');
+        setStatus('Other cards revealed');
       }, 920);
 
       setTimeout(() => {
@@ -1453,7 +1462,7 @@ async function resolveSpace(passedStart) {
     passedStart = true;
     flashAt(tx, ty, '#ffd76a', CS * 1.25);
     burst(tx, ty, 20, ['#ffd600','#fff','#00ff88'], 2.5, 0.022, 0.06);
-    msg = '回到起點基地';
+    msg = 'Back to GO BASE';
 
   } else if (isProperty(sp)) {
     const beforeLevel = propertyLevel(sp);
@@ -1471,12 +1480,12 @@ async function resolveSpace(passedStart) {
       burst(tx, ty,  50, ['#00ff88','#00c8ff','#aa00ff'],                  8, 0.005, 0.04);
       coinShower(60);
       showBig('LANDMARK!', '#ff9f2f', 2500);
-      setStatus(`${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
+      setStatus(`${sp.name}  Rent ×${rentMult} → Vault +$${earn}  ${levelMsg}`);
     } else {
       AUDIO.prize(Math.min(rentMult, 5));
       flashAt(tx, ty, '#3cffb0', CS * 1.15);
       burst(tx, ty, 32, ['#00ff88','#ffd600','#00c8ff','#aaffcc'], 3.5, 0.018, 0.08);
-      setStatus(`${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
+      setStatus(`${sp.name}  Rent ×${rentMult} → Vault +$${earn}  ${levelMsg}`);
     }
     addFloat(tx, ty - CS * 0.32, `+$${earn}`,
       sp.type === 'jackpot' ? '#ff9f2f' : '#00ff88');
@@ -1502,8 +1511,8 @@ async function resolveSpace(passedStart) {
     addFloat(tx, ty - CS * 0.32, `-$${actualLose}`, '#ff4060');
     screenShake();
     msg = sp.wipePot
-      ? `${sp.name}  租金池歸零，房屋重置，回到起點`
-      : `${sp.name}  租金池 -$${actualLose}`;
+      ? `${sp.name}  Vault wiped — properties reset — back to GO`
+      : `${sp.name}  Vault -$${actualLose}`;
 
   } else if (sp.type === 'random') {
     AUDIO.random();
@@ -1515,10 +1524,10 @@ async function resolveSpace(passedStart) {
       updateHUD();
       burst(tx, ty, 40, ['#ce93d8','#aa00ff','#00c8ff','#ffd600'], 4, 0.016, 0.07);
       addFloat(tx, ty - CS * 0.32, `+$${earn}`, '#ce93d8');
-      msg = `命運卡  租金加成 ×${rm}  租金池 +$${earn}`;
+      msg = `Fate Card  Rent bonus ×${rm}  Vault +$${earn}`;
     } else {
       burst(tx, ty, 18, ['#5c0080','#9900bb'], 1.8, 0.025, 0.05);
-      msg = '命運卡  空白，這回合沒有收入';
+      msg = 'Fate Card  Void — no reward this turn';
     }
   }
 
@@ -1568,14 +1577,14 @@ function onCashOut() {
   G.houseLevels.fill(0);
   hideCashBtn();
 
-  setStatus(`租金結算  $${potWas.toLocaleString()}${mult > 1 ? ' ×' + mult.toFixed(1) : ''} → $${cashVal.toLocaleString()} 入帳`);
+  setStatus(`Cashed out  $${potWas.toLocaleString()}${mult > 1 ? ' ×' + mult.toFixed(1) : ''} → $${cashVal.toLocaleString()} credited`);
   updateHUD();
 }
 
 // ── 遊戲結束 ──────────────────────────────────────────────────
 function gameOver() {
   document.getElementById('over-sub').innerHTML =
-    `共贏取 <strong style="color:#00ff88;font-family:monospace">$${G.totalWon.toLocaleString()}</strong> 星幣`;
+    `Total winnings: <strong style="color:#00ff88;font-family:monospace">$${G.totalWon.toLocaleString()}</strong>`;
   document.getElementById('overlay').classList.remove('hidden');
 }
 
@@ -1590,7 +1599,7 @@ function restart() {
   document.getElementById('roll-btn').disabled = false;
   document.getElementById('dice-wrap').classList.add('invisible');
   hideCashBtn();
-  setStatus('準備好了嗎？擲骰收租！');
+  setStatus('Ready? Roll the dice!');
   updateHUD();
 }
 
@@ -1614,8 +1623,8 @@ function showCashBtn() {
   const cashVal = Math.floor(G.pot * mult);
   document.getElementById('cash-btn').textContent =
     mult > 1
-      ? `結算租金  $${cashVal.toLocaleString()}  ×${mult.toFixed(1)}`
-      : `結算租金  $${cashVal.toLocaleString()}`;
+      ? `CASH OUT  $${cashVal.toLocaleString()}  ×${mult.toFixed(1)}`
+      : `CASH OUT  $${cashVal.toLocaleString()}`;
   document.getElementById('cash-btn').classList.remove('hidden');
 }
 
