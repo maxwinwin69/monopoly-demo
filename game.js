@@ -8,22 +8,22 @@ const BET_LEVELS = [10, 25, 50, 100, 200, 500];
 const MAX_HOUSE_LEVEL = 5;
 
 const SPACES = [
-  { id:0,  name:'起點基地', type:'start',   icon:'🛸', bg:'#1e0e00', bdr:'#ffd600' },
-  { id:1,  name:'隕石小屋', type:'prize',   icon:'🏠', mult:1, bg:'#001e0e' },
-  { id:2,  name:'水晶公寓', type:'prize',   icon:'🏢', mult:3, bg:'#000e28' },
-  { id:3,  name:'命運卡',   type:'random',  icon:'🎴', bg:'#140030' },
-  { id:4,  name:'太空稅',   type:'danger',  icon:'💸', pen:1,  bg:'#1e0000' },
-  { id:5,  name:'外星商圈', type:'prize',   icon:'🏬', mult:2, bg:'#001e0e' },
-  { id:6,  name:'超新星飯店', type:'prize', icon:'🏨', mult:5, bg:'#1e1000' },
-  { id:7,  name:'維修費',   type:'danger',  icon:'🧾', pen:2,  bg:'#1e0000' },
-  { id:8,  name:'暗物質豪宅', type:'prize', icon:'🏡', mult:3, bg:'#0a0022' },
-  { id:9,  name:'軌道別墅', type:'prize',   icon:'🏘️', mult:1, bg:'#001e0e' },
-  { id:10, name:'銀河地標', type:'jackpot', icon:'🏰', mult:8, bg:'#200010', bdr:'#ff6d00' },
-  { id:11, name:'命運卡',   type:'random',  icon:'🎴', bg:'#140030' },
-  { id:12, name:'歸零危機', type:'danger',  icon:'💣', pen:1, wipePot:true, bg:'#1e0000' },
-  { id:13, name:'文明古城', type:'prize',   icon:'🏛️', mult:3, bg:'#001e0e' },
-  { id:14, name:'火箭車站', type:'prize',   icon:'🚉', mult:4, bg:'#1e1000' },
-  { id:15, name:'月球民宿', type:'prize',   icon:'🏚️', mult:1, bg:'#001e0e' },
+  { id:0,  name:'起點基地', type:'start',   icon:'✦', bg:'#1e0e00', bdr:'#ffd600' },
+  { id:1,  name:'隕石小屋', type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
+  { id:2,  name:'水晶公寓', type:'prize',   icon:'◆', mult:3, bg:'#000e28' },
+  { id:3,  name:'命運卡',   type:'random',  icon:'◈', bg:'#140030' },
+  { id:4,  name:'太空稅',   type:'danger',  icon:'✕', pen:1,  bg:'#1e0000' },
+  { id:5,  name:'外星商圈', type:'prize',   icon:'◆', mult:2, bg:'#001e0e' },
+  { id:6,  name:'超新星飯店', type:'prize', icon:'◆', mult:5, bg:'#1e1000' },
+  { id:7,  name:'維修費',   type:'danger',  icon:'✕', pen:2,  bg:'#1e0000' },
+  { id:8,  name:'暗物質豪宅', type:'prize', icon:'◆', mult:3, bg:'#0a0022' },
+  { id:9,  name:'軌道別墅', type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
+  { id:10, name:'銀河地標', type:'jackpot', icon:'★', mult:12, bg:'#200010', bdr:'#ff6d00' },
+  { id:11, name:'命運卡',   type:'random',  icon:'◈', bg:'#140030' },
+  { id:12, name:'歸零危機', type:'danger',  icon:'⊗', pen:1, wipePot:true, bg:'#1e0000' },
+  { id:13, name:'文明古城', type:'prize',   icon:'◆', mult:3, bg:'#001e0e' },
+  { id:14, name:'火箭車站', type:'prize',   icon:'◆', mult:4, bg:'#1e1000' },
+  { id:15, name:'月球民宿', type:'prize',   icon:'◆', mult:1, bg:'#001e0e' },
 ];
 
 const SPACE_THEME = {
@@ -182,14 +182,11 @@ function draw() {
   rrStroke(2, 2, BS - 4, BS - 4, 16);
   ctx.restore();
 
-  // 繪製所有格子
-  SPACES.forEach(drawCell);
-
-  // 繪製中央面板
+  // 先畫非底排格子，再畫中央面板，最後畫底排
+  // 底排格子後畫，房屋高度超出時才不會被中央面板遮住
+  SPACES.filter(sp => spaceGrid(sp.id)[1] < 4).forEach(drawCell);
   drawCenter();
-
-  // 繪製棋子
-  drawToken();
+  SPACES.filter(sp => spaceGrid(sp.id)[1] === 4).forEach(drawCell);
 
   // 繪製特效（疊加在最上層）
   drawSpotlight();
@@ -321,12 +318,44 @@ function drawCell(sp) {
 
   // 當前格子高亮
   if (sp.id === G.position) {
+    const now   = Date.now();
+    const pulse = 0.5 + 0.5 * Math.sin(now * 0.007);
+
+    ctx.save();
+    // 外層光暈
+    ctx.strokeStyle = `rgba(${th.glow},${0.30 + pulse * 0.35})`;
+    ctx.lineWidth   = 6 + pulse * 4;
+    ctx.shadowColor = `rgba(${th.glow},0.90)`;
+    ctx.shadowBlur  = 20 + pulse * 18;
+    rrStroke(rx - 1, ry - 1, w + 2, h + 2, 11);
+    // 內層白框
+    ctx.strokeStyle = `rgba(255,255,255,${0.72 + pulse * 0.28})`;
+    ctx.lineWidth   = 2;
+    ctx.shadowBlur  = 8;
+    rrStroke(rx, ry, w, h, 10);
+    ctx.restore();
+
+    // 四角 L 形標記
     ctx.save();
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth   = 2.4;
-    ctx.shadowColor = `rgba(${th.glow},0.85)`;
-    ctx.shadowBlur  = 13;
-    rrStroke(rx - 1, ry - 1, w + 2, h + 2, 11);
+    ctx.lineWidth   = 2.5;
+    ctx.shadowColor = `rgba(${th.glow},1)`;
+    ctx.shadowBlur  = 10;
+    ctx.lineCap     = 'square';
+    const arm = Math.max(6, CS * 0.12);
+    const corners = [
+      [rx,     ry,      arm, 0,    0,   arm ],
+      [rx + w, ry,     -arm, 0,    0,   arm ],
+      [rx,     ry + h,  arm, 0,    0,  -arm ],
+      [rx + w, ry + h, -arm, 0,    0,  -arm ],
+    ];
+    corners.forEach(([cx2, cy2, dx1, dy1, dx2, dy2]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx2 + dx1, cy2);
+      ctx.lineTo(cx2, cy2);
+      ctx.lineTo(cx2, cy2 + dy2);
+      ctx.stroke();
+    });
     ctx.restore();
   }
 
@@ -457,6 +486,60 @@ function drawCenter() {
     ctx.fillStyle = `rgba(190,225,255,${tw * (0.5 + lap * 0.08)})`;
     ctx.fill();
   });
+
+  // ── 雷達脈衝環（持續動態，3 個相位差 120°）─────────────────
+  const radarPeriod = 2600;
+  for (let p = 0; p < 3; p++) {
+    const phase = ((now % radarPeriod) / radarPeriod + p / 3) % 1;
+    const ringR  = phase * Math.min(iw, ih) * 0.50;
+    const ringA  = (1 - phase) * (phase < 0.08 ? phase / 0.08 : 1) * 0.28;
+    ctx.save();
+    ctx.strokeStyle = `rgba(${glow},${ringA})`;
+    ctx.lineWidth   = 1.2;
+    ctx.shadowColor = col;
+    ctx.shadowBlur  = 5 * (1 - phase);
+    ctx.beginPath();
+    ctx.arc(cx, cy - CS * 0.08, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 漂浮星塵（22 粒各自以不同速度緩緩上升）─────────────────
+  const dustT = now * 0.000022;
+  for (let i = 0; i < 22; i++) {
+    const seed = i * 2399.3;
+    const px   = ix + Math.abs(Math.sin(seed * 0.7)) * iw;
+    const py   = iy + ((dustT * (0.3 + Math.abs(Math.sin(seed)) * 0.5) + Math.abs(Math.sin(seed * 1.3))) % 1) * ih;
+    const r    = 0.5 + Math.abs(Math.sin(seed * 2.1)) * 1.2;
+    const tw   = 0.4 + 0.6 * Math.abs(Math.sin(now * 0.0015 + seed));
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${glow},${0.05 + tw * 0.13})`;
+    ctx.fill();
+  }
+
+  // ── 雙臂銀河螺旋（極緩旋轉，螺線狀點陣）─────────────────────
+  ctx.save();
+  ctx.translate(cx, cy - CS * 0.08);
+  const galRot = now * 0.000048;
+  for (let arm = 0; arm < 2; arm++) {
+    ctx.save();
+    ctx.rotate(galRot + arm * Math.PI);
+    for (let i = 4; i < 52; i++) {
+      const t  = i / 52;
+      const a  = t * Math.PI * 3.8;
+      const sr = t * Math.min(iw, ih) * 0.46;
+      const sx = Math.cos(a) * sr;
+      const sy = Math.sin(a) * sr * 0.50;
+      const alpha = t * (1 - t) * 4 * 0.052 * (0.5 + 0.5 * Math.sin(now * 0.0019 + t * 7));
+      ctx.beginPath();
+      ctx.arc(sx, sy, 0.7 + t * 1.4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${glow},${alpha})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
 
   // 內部儀表弧線
   ctx.save();
@@ -814,7 +897,7 @@ function propertyLevel(sp) {
 function propertyMultiplier(sp) {
   if (!isProperty(sp)) return sp.mult || 0;
   const level = propertyLevel(sp);
-  const step = sp.type === 'jackpot' ? 2 : 1;
+  const step = sp.type === 'jackpot' ? 6 : 1;
   return sp.mult + level * step;
 }
 
@@ -831,88 +914,44 @@ function houseLabel(level) {
   return `${level} 棟房屋`;
 }
 
-const SEGMENT_DIGITS = {
-  0: ['a', 'b', 'c', 'd', 'e', 'f'],
-  1: ['b', 'c'],
-  2: ['a', 'b', 'g', 'e', 'd'],
-  3: ['a', 'b', 'c', 'd', 'g'],
-  4: ['f', 'g', 'b', 'c'],
-  5: ['a', 'f', 'g', 'c', 'd'],
-  6: ['a', 'f', 'e', 'd', 'c', 'g'],
-  7: ['a', 'b', 'c'],
-  8: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
-  9: ['a', 'b', 'c', 'd', 'f', 'g'],
-};
-
-function drawSegmentDigit(x, y, w, h, digit, color) {
-  const on = new Set(SEGMENT_DIGITS[digit] || []);
-  const t = Math.max(1.2, Math.min(w, h) * 0.16);
-  const r = t * 0.5;
-  const half = h * 0.5;
-  const segments = {
-    a: [x + t, y, w - t * 2, t],
-    b: [x + w - t, y + t * 0.75, t, half - t * 1.2],
-    c: [x + w - t, y + half + t * 0.25, t, half - t * 1.2],
-    d: [x + t, y + h - t, w - t * 2, t],
-    e: [x, y + half + t * 0.25, t, half - t * 1.2],
-    f: [x, y + t * 0.75, t, half - t * 1.2],
-    g: [x + t, y + half - t * 0.5, w - t * 2, t],
-  };
-
-  Object.entries(segments).forEach(([key, box]) => {
-    const [sx, sy, sw, sh] = box;
-    ctx.fillStyle = on.has(key) ? color : 'rgba(255,255,255,0.08)';
-    rrFill(sx, sy, sw, sh, r, ctx.fillStyle);
-  });
-}
-
 function drawMultiplierBadge(cx, cy, mult, th) {
-  const text = String(mult);
-  const digitW = CS * 0.087;
-  const digitH = CS * 0.155;
-  const gap = CS * 0.018;
-  const cross = CS * 0.087;
-  const padX = CS * 0.055;
-  const padY = CS * 0.022;
-  const totalW = padX * 2 + cross + gap + text.length * digitW + (text.length - 1) * gap;
-  const totalH = digitH + padY * 2;
-  const x = cx - totalW * 0.5;
-  const y = cy - totalH * 0.5;
+  const text = `×${mult}`;
+  const fs = CS * 0.168;
   const rgb = hexToRgb(th.edge);
 
   ctx.save();
+  ctx.font = `900 ${fs}px Impact, 'Arial Black', sans-serif`;
+  const tw = ctx.measureText(text).width;
+  const padX = CS * 0.072;
+  const padY = CS * 0.026;
+  const bw = tw + padX * 2;
+  const bh = fs * 0.80 + padY * 2;
+  const bx = cx - bw * 0.5;
+  const by = cy - bh * 0.5;
+
   ctx.shadowColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.88)`;
   ctx.shadowBlur = 14;
-  rrFill(x, y, totalW, totalH, CS * 0.045, 'rgba(2,8,18,0.88)');
-  rrFill(x + CS * 0.010, y + CS * 0.010, totalW - CS * 0.020, totalH * 0.42, CS * 0.030, `rgba(${rgb.r},${rgb.g},${rgb.b},0.20)`);
+  rrFill(bx, by, bw, bh, CS * 0.045, 'rgba(2,8,18,0.88)');
+  rrFill(bx + CS * 0.010, by + CS * 0.010, bw - CS * 0.020, bh * 0.42, CS * 0.030, `rgba(${rgb.r},${rgb.g},${rgb.b},0.20)`);
   ctx.shadowBlur = 0;
   ctx.lineWidth = Math.max(1.5, CS * 0.016);
   ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.82)`;
-  rrStroke(x, y, totalW, totalH, CS * 0.045);
+  rrStroke(bx, by, bw, bh, CS * 0.045);
   ctx.lineWidth = Math.max(1, CS * 0.006);
   ctx.strokeStyle = 'rgba(255,255,255,0.42)';
-  rrStroke(x + CS * 0.004, y + CS * 0.004, totalW - CS * 0.008, totalH - CS * 0.008, CS * 0.040);
+  rrStroke(bx + CS * 0.004, by + CS * 0.004, bw - CS * 0.008, bh - CS * 0.008, CS * 0.040);
 
-  const gx = x + padX;
-  const gy = y + padY;
-  ctx.lineWidth = Math.max(3, CS * 0.026);
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   ctx.shadowColor = th.edge;
   ctx.shadowBlur = 10;
-  ctx.beginPath();
-  ctx.moveTo(gx + cross * 0.18, gy + digitH * 0.22);
-  ctx.lineTo(gx + cross * 0.82, gy + digitH * 0.78);
-  ctx.moveTo(gx + cross * 0.82, gy + digitH * 0.22);
-  ctx.lineTo(gx + cross * 0.18, gy + digitH * 0.78);
-  ctx.stroke();
+  ctx.lineWidth = Math.max(3, CS * 0.028);
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(0,0,0,0.80)';
+  ctx.strokeText(text, cx, cy);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, cx, cy);
 
-  ctx.shadowBlur = 9;
-  let dx = gx + cross + gap;
-  for (const ch of text) {
-    drawSegmentDigit(dx, gy, digitW, digitH, Number(ch), '#ffffff');
-    dx += digitW + gap;
-  }
   ctx.restore();
 }
 
@@ -972,55 +1011,81 @@ function drawHouseLevel(x, y, w, h, sp, th) {
   ctx.fillStyle = `rgba(${Math.max(0, rgb.r - 65)},${Math.max(0, rgb.g - 65)},${Math.max(0, rgb.b - 65)},0.86)`;
   ctx.fill();
 
-  // roof/top face
-  const roofColor = level >= MAX_HOUSE_LEVEL ? '#ffd76a' : sp.mult >= 4 ? '#ff9f2f' : '#eaf6ff';
+  // flat top face — property color (visible from above in isometric view)
   ctx.beginPath();
-  ctx.moveTo(left, topY + bd * 0.52);
-  ctx.lineTo(bx - bw * 0.16, topY);
-  ctx.lineTo(bx + bw * 0.62, topY + bd * 0.34);
-  ctx.lineTo(right, topY + bd * 0.82);
+  ctx.moveTo(left,             topY + bd * 0.52);
+  ctx.lineTo(bx - bw * 0.16,  topY);
+  ctx.lineTo(bx + bw * 0.62,  topY + bd * 0.34);
+  ctx.lineTo(right,            topY + bd * 0.82);
   ctx.closePath();
-  ctx.fillStyle = roofColor;
+  ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.82)`;
   ctx.fill();
-  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.58)`;
-  ctx.stroke();
-
-  // connected gable/eave sits directly on the wall top edge.
-  ctx.beginPath();
-  ctx.moveTo(left - bw * 0.05, topY + bd * 0.56);
-  ctx.lineTo(bx - bw * 0.06, topY + bd * 0.08);
-  ctx.lineTo(right + bw * 0.05, topY + bd * 0.86);
-  ctx.lineTo(right - bw * 0.01, topY + bd * 0.98);
-  ctx.lineTo(left + bw * 0.02, topY + bd * 0.68);
-  ctx.closePath();
-  ctx.fillStyle = level >= MAX_HOUSE_LEVEL ? '#ffe89a' : sp.mult >= 4 ? '#ffbf47' : 'rgba(255,255,255,0.88)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-  ctx.stroke();
-
-  // roof thickness under the eave
-  ctx.beginPath();
-  ctx.moveTo(left - bw * 0.05, topY + bd * 0.56);
-  ctx.lineTo(left + bw * 0.02, topY + bd * 0.68);
-  ctx.lineTo(right - bw * 0.01, topY + bd * 0.98);
-  ctx.lineTo(right + bw * 0.05, topY + bd * 0.86);
-  ctx.lineTo(right + bw * 0.05, topY + bd * 1.02);
-  ctx.lineTo(right - bw * 0.02, topY + bd * 1.14);
-  ctx.lineTo(left, topY + bd * 0.84);
-  ctx.lineTo(left - bw * 0.06, topY + bd * 0.70);
-  ctx.closePath();
-  ctx.fillStyle = level >= MAX_HOUSE_LEVEL
-    ? 'rgba(196,132,20,0.86)'
-    : sp.mult >= 4 ? 'rgba(170,80,20,0.82)' : 'rgba(120,145,160,0.78)';
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(left - bw * 0.06, topY + bd * 0.70);
-  ctx.lineTo(right + bw * 0.07, topY + bd * 1.00);
-  ctx.lineWidth = Math.max(1, CS * 0.012);
-  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.72)`;
-  ctx.stroke();
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.52)`;
   ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── Gabled roof (mult ≥ 5 only) ──────────────────────────────
+  const ridgeH = bh * 0.38;
+  const ovh    = bw * 0.055;
+  const eaveTh = bd * 0.16;
+
+  const eFL = { x: left  - ovh,                 y: topY + bd * 0.52 + ovh * 0.22 };
+  const eFR = { x: right + ovh,                 y: topY + bd * 0.82 + ovh * 0.22 };
+  const eBL = { x: bx - bw * 0.16 - ovh * 0.5, y: topY - ovh * 0.12 };
+  const eBR = { x: bx + bw * 0.62 + ovh * 0.5, y: topY + bd * 0.34 + ovh * 0.12 };
+  const ridgeL = { x: (eFL.x + eBL.x) / 2, y: (eFL.y + eBL.y) / 2 - ridgeH };
+  const ridgeR = { x: (eFR.x + eBR.x) / 2, y: (eFR.y + eBR.y) / 2 - ridgeH };
+
+  if (propertyMultiplier(sp) >= 5) {
+    const roofTopColor  = `rgba(${rgb.r},${rgb.g},${rgb.b},0.80)`;
+    const roofFaceColor = `rgba(${Math.min(255,rgb.r+55)},${Math.min(255,rgb.g+55)},${Math.min(255,rgb.b+55)},0.92)`;
+    const roofSoftColor = `rgba(${Math.max(0,rgb.r-55)},${Math.max(0,rgb.g-55)},${Math.max(0,rgb.b-55)},0.85)`;
+
+    // Back/top slope — visible from above
+    ctx.beginPath();
+    ctx.moveTo(ridgeL.x, ridgeL.y);
+    ctx.lineTo(ridgeR.x, ridgeR.y);
+    ctx.lineTo(eBR.x, eBR.y);
+    ctx.lineTo(eBL.x, eBL.y);
+    ctx.closePath();
+    ctx.fillStyle = roofTopColor;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.38)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Front slope — lighter, faces viewer
+    ctx.beginPath();
+    ctx.moveTo(ridgeL.x, ridgeL.y);
+    ctx.lineTo(ridgeR.x, ridgeR.y);
+    ctx.lineTo(eFR.x, eFR.y);
+    ctx.lineTo(eFL.x, eFL.y);
+    ctx.closePath();
+    ctx.fillStyle = roofFaceColor;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Eave soffit — underside strip showing thickness
+    ctx.beginPath();
+    ctx.moveTo(eFL.x, eFL.y);
+    ctx.lineTo(eFR.x, eFR.y);
+    ctx.lineTo(eFR.x, eFR.y + eaveTh);
+    ctx.lineTo(eFL.x, eFL.y + eaveTh);
+    ctx.closePath();
+    ctx.fillStyle = roofSoftColor;
+    ctx.fill();
+
+    // Ridge highlight
+    ctx.beginPath();
+    ctx.moveTo(ridgeL.x, ridgeL.y);
+    ctx.lineTo(ridgeR.x, ridgeR.y);
+    ctx.lineWidth = Math.max(1.5, CS * 0.014);
+    ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.72)`;
+    ctx.stroke();
+    ctx.lineWidth = 1;
+  }
 
   // windows
   const rows = Math.max(1, Math.min(4, level + Math.floor(sp.mult / 3)));
@@ -1043,28 +1108,14 @@ function drawHouseLevel(x, y, w, h, sp, th) {
   ctx.arc(bx + doorW * 0.26, by - doorH * 0.30, Math.max(1, CS * 0.01), 0, Math.PI * 2);
   ctx.fill();
 
-  // sign / antenna for richer high-value properties
-  if (sp.mult >= 3) {
-    ctx.save();
-    ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.75)`;
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(bx + bw * 0.34, topY + bd * 0.10);
-    ctx.lineTo(bx + bw * 0.34, topY - bd * 0.38);
-    ctx.stroke();
-    ctx.fillStyle = sp.mult >= 5 ? '#ffd76a' : th.edge;
-    ctx.beginPath();
-    ctx.arc(bx + bw * 0.34, topY - bd * 0.43, Math.max(2, CS * 0.025), 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
 
   if (level >= MAX_HOUSE_LEVEL) {
     ctx.font = `bold ${CS * 0.078}px 'Courier New',monospace`;
     ctx.fillStyle = '#ffd76a';
     ctx.textAlign = 'center';
     ctx.shadowBlur = 8;
-    ctx.fillText('HOTEL', bx + bw * 0.04, topY - bd * 0.16);
+    const hotelY = propertyMultiplier(sp) >= 5 ? ridgeL.y - CS * 0.04 : topY - bd * 0.14;
+    ctx.fillText('HOTEL', bx + bw * 0.04, hotelY);
   }
 
   ctx.shadowBlur = 0;
@@ -1176,7 +1227,7 @@ function adjustBet(dir) {
 async function onRoll() {
   if (G.animating) return;
   const bet = BET_LEVELS[G.betIdx];
-  if (G.balance < bet) { setStatus('🛑 星幣不足，請降低投資額'); return; }
+  if (G.balance < bet) { setStatus('× 星幣不足，請降低投資額'); return; }
 
   AUDIO.init();
   G.animating = true;
@@ -1191,10 +1242,10 @@ async function onRoll() {
   document.getElementById('dice-wrap').classList.remove('invisible');
   AUDIO.dice();
   flashAt(BS / 2, BS / 2, '#ffd76a', CS * 1.6);
-  setStatus('🎲 骰子滾動中...');
+  setStatus('骰子滾動中...');
 
   await animateDiceRoll(d1, d2);
-  setStatus(`🚀 發射！${d1} + ${d2} = ${total}，移動 ${total} 格`);
+  setStatus(`${d1} + ${d2} = ${total}，移動 ${total} 格`);
   animateMove(total);
 }
 
@@ -1290,7 +1341,7 @@ function setFortuneCardFace(card, mult) {
   const isReward = mult > 0;
   card.classList.toggle('reward', isReward);
   card.classList.toggle('blank', !isReward);
-  card.querySelector('.card-art').textContent = isReward ? '🏠' : '🌫️';
+  card.querySelector('.card-art').textContent = isReward ? '◆' : '○';
   card.querySelector('.card-title').textContent = isReward ? '租金契約' : '星塵空卡';
   card.querySelector('.card-result').textContent = isReward ? `獎池 + 投資 ×${mult}` : '沒有收益';
   card.querySelector('.card-desc').textContent = isReward
@@ -1313,7 +1364,7 @@ function animateFortuneCard() {
   stage.classList.remove('hidden');
   void cards[0].offsetWidth;
   cards.forEach(card => card.classList.add('draw'));
-  setStatus('🎴 三選一，點選命運卡');
+  setStatus('三選一，點選命運卡');
 
   return new Promise(resolve => {
     const reveal = ev => {
@@ -1325,13 +1376,13 @@ function animateFortuneCard() {
       });
       AUDIO.random();
       chosen.classList.add('chosen', 'flip', 'revealed');
-      setStatus('🎴 你選中的命運卡翻開了！');
+      setStatus('命運卡翻開了');
 
       setTimeout(() => {
         cards.forEach((card, i) => {
           if (i !== chosenIdx) card.classList.add('peek', 'revealed');
         });
-        setStatus('🎴 其他命運卡也揭曉了');
+        setStatus('其他命運卡揭曉');
       }, 920);
 
       setTimeout(() => {
@@ -1402,7 +1453,7 @@ async function resolveSpace(passedStart) {
     passedStart = true;
     flashAt(tx, ty, '#ffd76a', CS * 1.25);
     burst(tx, ty, 20, ['#ffd600','#fff','#00ff88'], 2.5, 0.022, 0.06);
-    msg = '🛸 回到星際基地！';
+    msg = '回到起點基地';
 
   } else if (isProperty(sp)) {
     const beforeLevel = propertyLevel(sp);
@@ -1419,17 +1470,17 @@ async function resolveSpace(passedStart) {
       burst(tx, ty, 100, ['#ff6d00','#ffd600','#ff1744','#fff','#ffaa00'], 6, 0.007, 0.05);
       burst(tx, ty,  50, ['#00ff88','#00c8ff','#aa00ff'],                  8, 0.005, 0.04);
       coinShower(60);
-      showBig('🏰 LANDMARK!', '#ff9f2f', 2500);
-      setStatus(`🏰 ${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
+      showBig('LANDMARK!', '#ff9f2f', 2500);
+      setStatus(`${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
     } else {
       AUDIO.prize(Math.min(rentMult, 5));
       flashAt(tx, ty, '#3cffb0', CS * 1.15);
       burst(tx, ty, 32, ['#00ff88','#ffd600','#00c8ff','#aaffcc'], 3.5, 0.018, 0.08);
-      setStatus(`${sp.icon} ${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
+      setStatus(`${sp.name} 收租 ×${rentMult} → 租金池 +$${earn}，${levelMsg}`);
     }
     addFloat(tx, ty - CS * 0.32, `+$${earn}`,
       sp.type === 'jackpot' ? '#ff9f2f' : '#00ff88');
-    if (newLevel > beforeLevel) addFloat(tx, ty + CS * 0.08, `🏠 Lv.${newLevel}`, '#ffd76a');
+    if (newLevel > beforeLevel) addFloat(tx, ty + CS * 0.08, `Lv.${newLevel}`, '#ffd76a');
     msg = '';
 
   } else if (sp.type === 'danger') {
@@ -1451,8 +1502,8 @@ async function resolveSpace(passedStart) {
     addFloat(tx, ty - CS * 0.32, `-$${actualLose}`, '#ff4060');
     screenShake();
     msg = sp.wipePot
-      ? `${sp.icon} ${sp.name}！租金池歸零，房屋重置，回到起點`
-      : `${sp.icon} ${sp.name}！租金池 -$${actualLose}`;
+      ? `${sp.name}  租金池歸零，房屋重置，回到起點`
+      : `${sp.name}  租金池 -$${actualLose}`;
 
   } else if (sp.type === 'random') {
     AUDIO.random();
@@ -1464,10 +1515,10 @@ async function resolveSpace(passedStart) {
       updateHUD();
       burst(tx, ty, 40, ['#ce93d8','#aa00ff','#00c8ff','#ffd600'], 4, 0.016, 0.07);
       addFloat(tx, ty - CS * 0.32, `+$${earn}`, '#ce93d8');
-      msg = `🎴 命運卡：租金加成 ×${rm}！租金池 +$${earn}`;
+      msg = `命運卡  租金加成 ×${rm}  租金池 +$${earn}`;
     } else {
       burst(tx, ty, 18, ['#5c0080','#9900bb'], 1.8, 0.025, 0.05);
-      msg = '🎴 命運卡：空白卡，這回合沒有收入...';
+      msg = '命運卡  空白，這回合沒有收入';
     }
   }
 
@@ -1517,7 +1568,7 @@ function onCashOut() {
   G.houseLevels.fill(0);
   hideCashBtn();
 
-  setStatus(`✅ 租金結算！$${potWas.toLocaleString()}${mult > 1 ? ' ×' + mult.toFixed(1) : ''} → $${cashVal.toLocaleString()} 入帳，房屋已重置`);
+  setStatus(`租金結算  $${potWas.toLocaleString()}${mult > 1 ? ' ×' + mult.toFixed(1) : ''} → $${cashVal.toLocaleString()} 入帳`);
   updateHUD();
 }
 
@@ -1563,8 +1614,8 @@ function showCashBtn() {
   const cashVal = Math.floor(G.pot * mult);
   document.getElementById('cash-btn').textContent =
     mult > 1
-      ? `💰 結算租金 $${cashVal.toLocaleString()} (×${mult.toFixed(1)})`
-      : `💰 結算租金 $${cashVal.toLocaleString()}`;
+      ? `結算租金  $${cashVal.toLocaleString()}  ×${mult.toFixed(1)}`
+      : `結算租金  $${cashVal.toLocaleString()}`;
   document.getElementById('cash-btn').classList.remove('hidden');
 }
 
