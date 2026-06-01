@@ -432,7 +432,7 @@ function drawCell(sp) {
   if (sp.type === 'danger') {
     pill(tagX, tagY, tagW, tagH, th.edge, `-×${sp.pen}`);
   } else if (sp.type === 'random') {
-    pill(tagX, tagY, tagW, tagH, th.edge, '隨機');
+    pill(tagX, tagY, tagW, tagH, th.edge, 'CARD');
   }
 
   if (sp.type === 'danger') drawHazardStripes(rx, ry, w, h, th, pulse);
@@ -1469,7 +1469,7 @@ async function resolveSpace(passedStart) {
     const rentMult = propertyMultiplier(sp);
     const earn = bet * rentMult;
     const newLevel = upgradeProperty(sp);
-    const levelMsg = newLevel > beforeLevel ? `升級到 ${houseLabel(newLevel)}` : `${houseLabel(newLevel)}滿級`;
+    const levelMsg = newLevel > beforeLevel ? `→ ${houseLabel(newLevel)}` : `${houseLabel(newLevel)} max`;
     G.pot += earn;
     updateHUD();
 
