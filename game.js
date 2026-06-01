@@ -733,6 +733,9 @@ function animateDiceRoll(finalD1, finalD2) {
   const d1El = document.getElementById('d1');
   const d2El = document.getElementById('d2');
   const totalEl = document.getElementById('dtot');
+  const stage = document.getElementById('dice-stage');
+  const stageDie1 = document.getElementById('stage-die1');
+  const stageDie2 = document.getElementById('stage-die2');
   const duration = 920;
   const tick = 72;
   let elapsed = 0;
@@ -742,6 +745,11 @@ function animateDiceRoll(finalD1, finalD2) {
   totalEl.classList.remove('pop');
   d1El.classList.add('rolling');
   d2El.classList.add('rolling');
+  stage.classList.remove('hidden');
+  stageDie1.classList.remove('settle');
+  stageDie2.classList.remove('settle');
+  stageDie1.classList.add('rolling');
+  stageDie2.classList.add('rolling');
   totalEl.textContent = '...';
 
   return new Promise(resolve => {
@@ -754,19 +762,43 @@ function animateDiceRoll(finalD1, finalD2) {
         clearInterval(timer);
         d1El.classList.remove('rolling');
         d2El.classList.remove('rolling');
+        stageDie1.classList.remove('rolling');
+        stageDie2.classList.remove('rolling');
         d1El.textContent = DICE_EMOJI[finalD1 - 1];
         d2El.textContent = DICE_EMOJI[finalD2 - 1];
         totalEl.textContent = finalD1 + finalD2;
+        setStageDieFace(stageDie1, finalD1);
+        setStageDieFace(stageDie2, finalD2);
 
         void d1El.offsetWidth;
+        void stageDie1.offsetWidth;
         d1El.classList.add('settle');
         d2El.classList.add('settle');
+        stageDie1.classList.add('settle');
+        stageDie2.classList.add('settle');
         totalEl.classList.add('pop');
 
-        setTimeout(resolve, 260);
+        setTimeout(() => {
+          stage.classList.add('hidden');
+          stageDie1.classList.remove('settle');
+          stageDie2.classList.remove('settle');
+          resolve();
+        }, 680);
       }
     }, tick);
   });
+}
+
+function setStageDieFace(el, face) {
+  const rotations = {
+    1: 'rotateX(0deg) rotateY(0deg)',
+    2: 'rotateX(0deg) rotateY(-90deg)',
+    3: 'rotateX(-90deg) rotateY(0deg)',
+    4: 'rotateX(90deg) rotateY(0deg)',
+    5: 'rotateX(0deg) rotateY(90deg)',
+    6: 'rotateX(0deg) rotateY(180deg)',
+  };
+  el.style.setProperty('--final-rot', rotations[face]);
 }
 
 // ── 棋子移動動畫 ──────────────────────────────────────────────

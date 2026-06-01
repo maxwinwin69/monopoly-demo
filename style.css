@@ -151,6 +151,79 @@ body::after{
   text-shadow:0 0 12px rgba(60,255,176,.56)}
 #dtot.pop{animation:total-pop .36s cubic-bezier(.2,1.6,.3,1) both}
 
+#dice-stage{
+  position:fixed;inset:0;z-index:50;
+  display:flex;align-items:center;justify-content:center;gap:28px;
+  perspective:720px;pointer-events:none;
+}
+#dice-stage.hidden{display:none!important}
+.dice-stage-glow{
+  position:absolute;width:min(58vw,310px);aspect-ratio:1;border-radius:50%;
+  background:
+    radial-gradient(circle,rgba(255,215,106,.22) 0%,rgba(216,32,111,.14) 34%,transparent 68%);
+  filter:blur(2px);animation:stage-pulse .62s ease-in-out infinite alternate;
+}
+.dice-cube{
+  width:70px;height:70px;position:relative;
+  transform-style:preserve-3d;
+  filter:drop-shadow(0 18px 22px rgba(0,0,0,.46)) drop-shadow(0 0 24px rgba(255,215,106,.22));
+}
+.dice-cube.alt{animation-delay:-.08s}
+.cube-core{
+  width:100%;height:100%;position:relative;transform-style:preserve-3d;
+  transform:rotateX(-18deg) rotateY(24deg);
+  transition:transform .42s cubic-bezier(.16,1.24,.28,1);
+}
+.dice-cube.rolling .cube-core{animation:stage-dice-roll .52s linear infinite}
+.dice-cube.settle .cube-core{animation:stage-dice-settle .42s cubic-bezier(.2,1.45,.26,1) both}
+.dice-cube.alt.rolling .cube-core{animation-duration:.46s;animation-direction:reverse}
+.face{
+  position:absolute;inset:0;border-radius:15px;
+  background:
+    radial-gradient(circle at 28% 20%,rgba(255,255,255,.95),rgba(255,247,220,.88) 34%,#ffd76a 78%,#ff9f2f 100%);
+  border:1px solid rgba(255,255,255,.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 -8px 16px rgba(105,43,0,.22),
+    0 0 18px rgba(255,215,106,.18);
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);
+  padding:12px;
+}
+.face i{
+  width:11px;height:11px;border-radius:50%;background:#281000;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.25),0 1px 1px rgba(255,255,255,.24);
+  align-self:center;justify-self:center;
+}
+.f1{transform:translateZ(35px)}
+.f2{transform:rotateY(90deg) translateZ(35px)}
+.f3{transform:rotateX(90deg) translateZ(35px)}
+.f4{transform:rotateX(-90deg) translateZ(35px)}
+.f5{transform:rotateY(-90deg) translateZ(35px)}
+.f6{transform:rotateY(180deg) translateZ(35px)}
+.f1 i{grid-column:2;grid-row:2}
+.f2 i:nth-child(1){grid-column:1;grid-row:1}
+.f2 i:nth-child(2){grid-column:3;grid-row:3}
+.f3 i:nth-child(1){grid-column:1;grid-row:1}
+.f3 i:nth-child(2){grid-column:2;grid-row:2}
+.f3 i:nth-child(3){grid-column:3;grid-row:3}
+.f4 i:nth-child(1){grid-column:1;grid-row:1}
+.f4 i:nth-child(2){grid-column:3;grid-row:1}
+.f4 i:nth-child(3){grid-column:1;grid-row:3}
+.f4 i:nth-child(4){grid-column:3;grid-row:3}
+.f5 i:nth-child(1){grid-column:1;grid-row:1}
+.f5 i:nth-child(2){grid-column:3;grid-row:1}
+.f5 i:nth-child(3){grid-column:2;grid-row:2}
+.f5 i:nth-child(4){grid-column:1;grid-row:3}
+.f5 i:nth-child(5){grid-column:3;grid-row:3}
+.f6 i:nth-child(1){grid-column:1;grid-row:1}
+.f6 i:nth-child(2){grid-column:3;grid-row:1}
+.f6 i:nth-child(3){grid-column:1;grid-row:2}
+.f6 i:nth-child(4){grid-column:3;grid-row:2}
+.f6 i:nth-child(5){grid-column:1;grid-row:3}
+.f6 i:nth-child(6){grid-column:3;grid-row:3}
+
 @keyframes dice-roll{
   0%{transform:translateY(0) rotate(0deg) scale(1)}
   35%{transform:translateY(-13px) rotate(14deg) scale(1.08)}
@@ -166,6 +239,21 @@ body::after{
   0%{opacity:0;transform:translateY(8px) scale(.72)}
   70%{opacity:1;transform:translateY(-2px) scale(1.16)}
   100%{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes stage-pulse{
+  from{transform:scale(.9);opacity:.68}
+  to{transform:scale(1.08);opacity:1}
+}
+@keyframes stage-dice-roll{
+  0%{transform:translateY(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg)}
+  35%{transform:translateY(-24px) rotateX(210deg) rotateY(150deg) rotateZ(18deg)}
+  70%{transform:translateY(10px) rotateX(430deg) rotateY(330deg) rotateZ(-14deg)}
+  100%{transform:translateY(0) rotateX(720deg) rotateY(540deg) rotateZ(0deg)}
+}
+@keyframes stage-dice-settle{
+  0%{transform:translateY(-18px) scale(1.08) var(--final-rot)}
+  58%{transform:translateY(5px) scale(.96) var(--final-rot)}
+  100%{transform:translateY(0) scale(1) var(--final-rot)}
 }
 
 /* ── Game-over overlay ── */
