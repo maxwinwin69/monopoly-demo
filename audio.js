@@ -173,6 +173,23 @@ const AUDIO = (() => {
       });
     },
 
+    // 骰子滾動中的短促碰撞聲
+    diceTick() {
+      _sfx(t => {
+        _noise(t, 0.035, 0.16, 2200 + Math.random() * 1800);
+        _osc('triangle', 150 + Math.random() * 170, t, 0.045, 0.055);
+      });
+    },
+
+    // 骰子落定聲
+    diceLand() {
+      _sfx(t => {
+        _noise(t, 0.065, 0.34, 1800);
+        _osc('triangle', 180, t, 0.085, 0.16);
+        _osc('sine', 96, t, 0.10, 0.12);
+      });
+    },
+
     // 獲獎（×1～×5 按倍率升音）
     prize(mult) {
       _sfx(t => {

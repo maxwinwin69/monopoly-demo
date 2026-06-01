@@ -739,6 +739,7 @@ function animateDiceRoll(finalD1, finalD2) {
   const duration = 920;
   const tick = 72;
   let elapsed = 0;
+  let soundTick = 0;
 
   d1El.classList.remove('settle');
   d2El.classList.remove('settle');
@@ -755,11 +756,14 @@ function animateDiceRoll(finalD1, finalD2) {
   return new Promise(resolve => {
     const timer = setInterval(() => {
       elapsed += tick;
+      soundTick++;
       d1El.textContent = DICE_EMOJI[r6() - 1];
       d2El.textContent = DICE_EMOJI[r6() - 1];
+      if (soundTick % 2 === 0) AUDIO.diceTick();
 
       if (elapsed >= duration) {
         clearInterval(timer);
+        AUDIO.diceLand();
         d1El.classList.remove('rolling');
         d2El.classList.remove('rolling');
         stageDie1.classList.remove('rolling');
